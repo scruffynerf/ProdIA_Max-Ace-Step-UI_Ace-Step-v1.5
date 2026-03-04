@@ -2,15 +2,18 @@
 # -*- coding: utf-8 -*-
 """
 ╔══════════════════════════════════════════════════════════════╗
-║          DETECTOR DE BPM Y CLAVE MUSICAL (Key)              ║
+║          DETECTOR DE BPM Y CLAVE MUSICAL (Key)               ║
+║          BPM AND MUSICAL KEY DETECTOR                        ║
 ║          Escanea una carpeta de archivos de audio            ║
-║          Formatos: .mp3, .wav, .flac, .ogg, .m4a, .wma      ║
+║          Formatos: .mp3, .wav, .flac, .ogg, .m4a, .wma       ║
 ╚══════════════════════════════════════════════════════════════╝
 
-Uso:
-  python detectar_bpm_clave.py [carpeta]
+Uso / Usage:
+  python detectar_bpm_clave.py [carpeta/folder]
 
 Si no se especifica carpeta, se pregunta interactivamente.
+If no folder is specified, it asks interactively.
+
 Genera un archivo CSV con los resultados en la carpeta analizada.
 
 Algoritmos:
@@ -27,6 +30,10 @@ import time
 import warnings
 import argparse
 from datetime import datetime
+
+# Add root directory to path for i18n import
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from i18n.utils import t
 
 import numpy as np
 
@@ -181,7 +188,7 @@ def analyze_file(filepath):
         }
         
     except Exception as e:
-        print(f"  ERROR procesando {os.path.basename(filepath)}: {e}")
+        print(f"  {t('error_processing', file=os.path.basename(filepath), error=e)}")
         return None
 
 
@@ -197,30 +204,30 @@ def scan_folder(folder_path):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Detector de BPM y Clave Musical para archivos de audio'
+        description=t('bpm_key_detector')
     )
     parser.add_argument('folder', nargs='?', default=None,
-                        help='Carpeta con archivos de audio a analizar')
+                        help='Carpeta con archivos de audio a analizar / Folder with audio files to analyze')
     parser.add_argument('--recursive', '-r', action='store_true',
-                        help='Buscar también en subcarpetas')
+                        help='Buscar también en subcarpetas / Search also in subfolders')
     args = parser.parse_args()
     
     print()
-    print("=" * 66)
-    print("   DETECTOR DE BPM Y CLAVE MUSICAL")
-    print("   Formatos soportados: MP3, WAV, FLAC, OGG, M4A, WMA, AAC, OPUS")
-    print("=" * 66)
+    print("=" * 70)
+    print(f"   {t('bpm_key_detector')}")
+    print(f"   {t('formats_supported')}")
+    print("=" * 70)
     print()
     
     # Obtener carpeta
     folder = args.folder
     if not folder:
-        folder = input("  Ingresa la ruta de la carpeta con los audios:\n  > ").strip()
+        folder = input(f"  {t('enter_folder_path')}\n  > ").strip()
         folder = folder.strip('"').strip("'")
     
     if not os.path.isdir(folder):
-        print(f"\n  ERROR: La carpeta no existe: {folder}")
-        input("\n  Presiona Enter para salir...")
+        print(f"\n  {t('folder_not_found', folder=folder)}")
+        input(f"\n  {t('press_enter_to_exit')}")
         sys.exit(1)
     
     # Buscar archivos
@@ -235,12 +242,12 @@ def main():
         audio_files = scan_folder(folder)
     
     if not audio_files:
-        print(f"\n  No se encontraron archivos de audio en: {folder}")
-        input("\n  Presiona Enter para salir...")
+        print(f"\n  {t('no_files_found', folder=folder)}")
+        input(f"\n  {t('press_enter_to_exit')}")
         sys.exit(1)
     
-    print(f"  Carpeta: {folder}")
-    print(f"  Archivos encontrados: {len(audio_files)}")
+    print(f"  {t('scanning_folder', folder=folder)}")
+    print(f"  {t('files_found', count=len(audio_files))}")
     print()
     
     # ─── Analizar ────────────────────────────────────────────────────────
@@ -248,8 +255,7 @@ def main():
     errors = []
     t_start = time.time()
     
-    # Primero analizar todo (mostrando progreso simple)
-    print("  Analizando...\n")
+    print(f"  {t('analyzing')}\n")
     for i, filepath in enumerate(audio_files, 1):
         filename = os.path.basename(filepath)
         print(f"  [{i:>3}/{len(audio_files)}] {filename}... ", end="", flush=True)
@@ -273,14 +279,13 @@ def main():
     # Ancho total de la tabla
     # #(4) + nombre + BPM(8) + Clave(14) + Conf(7) + mm:ss(8) + seg(10) + espacios
     total_width = 4 + name_col + 2 + 8 + 2 + 14 + 2 + 7 + 2 + 8 + 2 + 10
-    
     separator = "─" * total_width
     
     print()
     print(f"  {'═' * total_width}")
-    print(f"  {'RESULTADOS':^{total_width}}")
+    print(f"  {t('results').center(total_width)}")
     print(f"  {'═' * total_width}")
-    header = f"  {'#':>3} {'Archivo':<{name_col}}  {'BPM':>7}  {'Clave':<12}  {'Conf':>6}  {'Tiempo':>7}  {'Segundos':>9}"
+    header = f"  {'#':>3} {t('archivo'):<{name_col}}  {'BPM':>7}  {t('clave'):<12}  {t('conf'):>6}  {t('tiempo'):>7}  {t('segundos'):>9}"
     print(header)
     print(f"  {separator}")
     
@@ -306,18 +311,18 @@ def main():
     if results:
         bpms = [r['bpm'] for r in results]
         durations = [r['duration_sec'] for r in results]
-        print(f"\n  ═══ Estadísticas BPM ═══")
-        print(f"  Promedio: {np.mean(bpms):.1f}  │  Mínimo: {min(bpms):.1f}  │  Máximo: {max(bpms):.1f}")
-        print(f"  Mediana:  {np.median(bpms):.1f}  │  Desv. Estándar: {np.std(bpms):.1f}")
+        print(f"\n  ═══ {t('bpm_stats')} ═══")
+        print(f"  {t('avg')}: {np.mean(bpms):.1f}  │  {t('min')}: {min(bpms):.1f}  │  {t('max')}: {max(bpms):.1f}")
+        print(f"  {t('median')}:  {np.median(bpms):.1f}  │  {t('std')}: {np.std(bpms):.1f}")
         
-        print(f"\n  ═══ Estadísticas Duración ═══")
-        print(f"  Promedio: {format_duration(np.mean(durations))} ({np.mean(durations):.1f}s)")
-        print(f"  Mínima:   {format_duration(min(durations))} ({min(durations):.1f}s)  │  Máxima: {format_duration(max(durations))} ({max(durations):.1f}s)")
+        print(f"\n  ═══ {t('duration_stats')} ═══")
+        print(f"  {t('avg')}: {format_duration(np.mean(durations))} ({np.mean(durations):.1f}s)")
+        print(f"  {t('min')}:   {format_duration(min(durations))} ({min(durations):.1f}s)  │  {t('max')}: {format_duration(max(durations))} ({max(durations):.1f}s)")
         
         # Distribución de claves
         from collections import Counter
         key_counts = Counter(r['key_full'] for r in results)
-        print(f"\n  ═══ Distribución de Claves ═══")
+        print(f"\n  ═══ {t('key_distribution')} ═══")
         for key, count in key_counts.most_common():
             bar = "█" * count
             print(f"  {key:<12} {count:>3}  {bar}")
@@ -337,13 +342,13 @@ def main():
                     r['key_full'], r['confidence'], r['duration'], r['duration_sec']
                 ])
         
-        print(f"\n  Resultados guardados en:")
+        print(f"\n  {t('saved_to')}")
         print(f"  {csv_path}")
     except Exception as e:
-        print(f"\n  Error guardando CSV: {e}")
+        print(f"\n  {t('error_saving_csv', error=e)}")
     
     print()
-    input("  Presiona Enter para salir...")
+    input(f"  {t('press_enter_to_exit')}")
 
 
 if __name__ == '__main__':

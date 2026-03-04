@@ -8,7 +8,11 @@ Reglas:
   - Corregir BPMs mal detectados (>150 → /2, <50 → *2)
   - Limpiar genres raros
 """
-import json, shutil, os
+import json, shutil, os, sys
+
+# Add root directory to path for i18n import
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from i18n.utils import t
 
 JSON_PATH = r"D:\espacios de trabajo\vscode\acestep\ACE-Step-1.5_\datasets\Continuar.json"
 BACKUP_PATH = JSON_PATH + ".bak_captions"

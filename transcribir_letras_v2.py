@@ -27,6 +27,10 @@ import os
 import sys
 import json
 import time
+
+# Add root directory to path for i18n import
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from i18n.utils import t
 import argparse
 import warnings
 from pathlib import Path
