@@ -633,6 +633,8 @@ const SongItem: React.FC<SongItemProps> = React.memo(({
                     title: song.title || 'Untitled',
                     source: 'song',
                 }));
+                // Full song data for chat assistant context
+                e.dataTransfer.setData('application/x-ace-song', JSON.stringify(song));
                 const preview = createDragPreview(e.currentTarget);
                 const rect = e.currentTarget.getBoundingClientRect();
                 const offsetX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));

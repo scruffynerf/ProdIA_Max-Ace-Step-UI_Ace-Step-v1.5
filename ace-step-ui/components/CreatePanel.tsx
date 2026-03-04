@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
-import { Sparkles, ChevronDown, Settings2, Trash2, Music2, Sliders, Dices, Hash, RefreshCw, Plus, Upload, Play, Pause, Loader2, Download, FolderOpen, ArrowLeft, Check, FolderSearch, Database, Mic, FileText, Guitar, AlertTriangle, X, Save, User, Layers } from 'lucide-react';
+import { Sparkles, ChevronDown, Settings2, Trash2, Music2, Sliders, Dices, Hash, RefreshCw, Plus, Upload, Play, Pause, Loader2, Download, FolderOpen, ArrowLeft, Check, FolderSearch, Database, Mic, FileText, Guitar, AlertTriangle, X, Save, User, Layers, Info } from 'lucide-react';
 import { GenerationParams, Song } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { generateApi, trainingApi, voicesApi, vramApi } from '../services/api';
+import { uiBridge, UIAction, UIState } from '../services/uiBridge';
 import { MAIN_STYLES } from '../data/genres';
 import { EditableSlider } from './EditableSlider';
 import { SongLyricsModal } from './SongLyricsModal';
@@ -30,7 +31,10 @@ interface CreatePanelProps {
   createdSongs?: Song[];
   pendingAudioSelection?: { target: 'reference' | 'source'; url: string; title?: string } | null;
   onAudioSelectionApplied?: () => void;
+  pendingLyrics?: { text: string; mode: 'overwrite' | 'append' } | null;
+  onLyricsApplied?: () => void;
   onPrepareTraining?: (song: Song) => void;
+  onShowInfo?: (info: { title: string; content: string }) => void;
 }
 
 const KEY_SIGNATURES = [
@@ -56,6 +60,7 @@ const KEY_SIGNATURES = [
 
 const TIME_SIGNATURES = [
   { value: '', label: 'Auto' },
+  { value: '1', label: '1/4' },
   { value: '2', label: '2/4' },
   { value: '3', label: '3/4' },
   { value: '4', label: '4/4' },
@@ -133,7 +138,10 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
   createdSongs = [],
   pendingAudioSelection,
   onAudioSelectionApplied,
+  pendingLyrics,
+  onLyricsApplied,
   onPrepareTraining,
+  onShowInfo,
 }) => {
   const { isAuthenticated, token, user } = useAuth();
   const { t } = useI18n();
@@ -677,6 +685,165 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
   const [isResizing, setIsResizing] = useState(false);
   const lyricsRef = useRef<HTMLDivElement>(null);
 
+
+  // ═══ UIBridge: bidirectional sync with ChatAssistant ═══
+
+  // Ref-based state provider (avoids re-registering on every render)
+  const getUIStateRef = useRef<() => UIState>(() => ({} as UIState));
+  getUIStateRef.current = (): UIState => ({
+    customMode, songDescription, lyrics, style, title, instrumental, vocalLanguage, vocalGender,
+    bpm, keyScale, timeSignature,
+    inferenceSteps, guidanceScale, shift, inferMethod, thinking, enhance, audioFormat,
+    duration, batchSize, bulkCount, randomSeed, seed,
+    taskType, selectedModel, lmBackend, lmModel,
+    lmTemperature, lmCfgScale, lmTopK, lmTopP, lmNegativePrompt,
+    referenceAudioUrl, referenceAudioTitle, sourceAudioUrl, sourceAudioTitle,
+    audioCoverStrength, sourceStrength, audioCodes,
+    repaintingStart, repaintingEnd, instruction,
+    editMode, editAction, editTarget, editStart, editEnd,
+    loraPath, loraLoaded, loraEnabled, loraScale, loraTriggerTag, loraTagPosition,
+    selectedLoraName, selectedLoraVariant,
+    loraList: loraList.map(l => ({ name: l.name, source: l.source, variants: l.variants?.map(v => v.label), metadata: l.metadata })),
+    variationMode, audioInfluence, styleInfluence, weirdness,
+    sectionMeasures, melodicVariation,
+    apgNormThreshold, apgMomentum, apgEta,
+    noRepeatNgramSize, vocalRange, vocalStyle, noteSustain,
+    useAdg, cfgIntervalStart, cfgIntervalEnd,
+    useCotMetas, useCotCaption, useCotLanguage, autogen,
+    getScores, getLrc, scoreScale, lmBatchChunkSize,
+    alignToMeasures, isFormatCaption,
+    maxDurationWithLm, maxDurationWithoutLm,
+    trackName, completeTrackClasses,
+    vocalAudioUrl, vocalAudioTitle, instrumentalAudioUrl,
+    separationQuality, useVocalAsReference, useInstrumentalAsSource,
+    fetchedModels: fetchedModels.map(m => ({ name: m.name, is_active: m.is_active, is_preloaded: m.is_preloaded })),
+    vramStatus: vramStatus ? { used_mb: vramStatus.used_mb, total_mb: vramStatus.total_mb, free_mb: vramStatus.free_mb, percent: vramStatus.usage_percent } : null,
+    llmStatus: llmStatus ? { loaded: llmStatus.loaded, model: llmStatus.model || '', backend: llmStatus.backend || '' } : null,
+    musicTags: musicTags.map(t => ({ label: t.label, tier: t.tier })),
+  });
+
+  // Register state provider once
+  useEffect(() => {
+    uiBridge.registerStateProvider(() => getUIStateRef.current());
+    return () => uiBridge.unregisterStateProvider();
+  }, []);
+
+  // Subscribe to actions from ChatAssistant
+  useEffect(() => {
+    const unsub = uiBridge.onAction((action: UIAction) => {
+      if (action.type === 'set') {
+        const p = action.params;
+        // Core fields
+        if (p.customMode !== undefined) setCustomMode(p.customMode);
+        if (p.songDescription !== undefined) setSongDescription(p.songDescription);
+        if (p.lyrics !== undefined) setLyrics(p.lyrics);
+        if (p.style !== undefined) setStyle(p.style);
+        if (p.title !== undefined) setTitle(p.title);
+        if (p.instrumental !== undefined) setInstrumental(p.instrumental);
+        if (p.vocalLanguage !== undefined) setVocalLanguage(p.vocalLanguage);
+        if (p.vocalGender !== undefined) setVocalGender(p.vocalGender as any);
+        // Music theory
+        if (p.bpm !== undefined) setBpm(Number(p.bpm));
+        if (p.keyScale !== undefined) setKeyScale(p.keyScale);
+        if (p.timeSignature !== undefined) setTimeSignature(p.timeSignature);
+        // Quality
+        if (p.inferenceSteps !== undefined) setInferenceSteps(Number(p.inferenceSteps));
+        if (p.guidanceScale !== undefined) setGuidanceScale(Number(p.guidanceScale));
+        if (p.shift !== undefined) setShift(Number(p.shift));
+        if (p.inferMethod !== undefined) setInferMethod(p.inferMethod as any);
+        if (p.thinking !== undefined) setThinking(p.thinking);
+        if (p.enhance !== undefined) setEnhance(p.enhance);
+        if (p.audioFormat !== undefined) setAudioFormat(p.audioFormat as any);
+        // Duration / batch
+        if (p.duration !== undefined) setDuration(Number(p.duration));
+        if (p.batchSize !== undefined) setBatchSize(Number(p.batchSize));
+        if (p.bulkCount !== undefined) setBulkCount(Number(p.bulkCount));
+        if (p.randomSeed !== undefined) setRandomSeed(p.randomSeed);
+        if (p.seed !== undefined) setSeed(Number(p.seed));
+        // Task type
+        if (p.taskType !== undefined) setTaskType(p.taskType);
+        // Model
+        if (p.selectedModel !== undefined) setSelectedModel(p.selectedModel);
+        if (p.lmBackend !== undefined) setLmBackend(p.lmBackend as any);
+        if (p.lmModel !== undefined) setLmModel(p.lmModel);
+        // LM sampling
+        if (p.lmTemperature !== undefined) setLmTemperature(Number(p.lmTemperature));
+        if (p.lmCfgScale !== undefined) setLmCfgScale(Number(p.lmCfgScale));
+        if (p.lmTopK !== undefined) setLmTopK(Number(p.lmTopK));
+        if (p.lmTopP !== undefined) setLmTopP(Number(p.lmTopP));
+        if (p.lmNegativePrompt !== undefined) setLmNegativePrompt(p.lmNegativePrompt);
+        // Audio references
+        if (p.referenceAudioUrl !== undefined) setReferenceAudioUrl(p.referenceAudioUrl);
+        if (p.referenceAudioTitle !== undefined) setReferenceAudioTitle(p.referenceAudioTitle);
+        if (p.sourceAudioUrl !== undefined) setSourceAudioUrl(p.sourceAudioUrl);
+        if (p.sourceAudioTitle !== undefined) setSourceAudioTitle(p.sourceAudioTitle);
+        if (p.audioCoverStrength !== undefined) setAudioCoverStrength(Number(p.audioCoverStrength));
+        if (p.sourceStrength !== undefined) setSourceStrength(Number(p.sourceStrength));
+        // Repaint / edit
+        if (p.repaintingStart !== undefined) setRepaintingStart(Number(p.repaintingStart));
+        if (p.repaintingEnd !== undefined) setRepaintingEnd(Number(p.repaintingEnd));
+        if (p.instruction !== undefined) setInstruction(p.instruction);
+        if (p.editMode !== undefined) setEditMode(p.editMode);
+        if (p.editAction !== undefined) setEditAction(p.editAction as any);
+        if (p.editTarget !== undefined) setEditTarget(p.editTarget as any);
+        if (p.editStart !== undefined) setEditStart(Number(p.editStart));
+        if (p.editEnd !== undefined) setEditEnd(Number(p.editEnd));
+        // LoRA
+        if (p.loraPath !== undefined) setLoraPath(p.loraPath);
+        if (p.loraEnabled !== undefined) setLoraEnabled(p.loraEnabled);
+        if (p.loraScale !== undefined) setLoraScale(Number(p.loraScale));
+        if (p.loraTriggerTag !== undefined) setLoraTriggerTag(p.loraTriggerTag);
+        if (p.loraTagPosition !== undefined) setLoraTagPosition(p.loraTagPosition);
+        if (p.selectedLoraName !== undefined) setSelectedLoraName(p.selectedLoraName);
+        if (p.selectedLoraVariant !== undefined) setSelectedLoraVariant(p.selectedLoraVariant);
+        // Variation mode
+        if (p.variationMode !== undefined) setVariationMode(p.variationMode);
+        if (p.audioInfluence !== undefined) setAudioInfluence(Number(p.audioInfluence));
+        if (p.styleInfluence !== undefined) setStyleInfluence(Number(p.styleInfluence));
+        if (p.weirdness !== undefined) setWeirdness(Number(p.weirdness));
+        // Melodic / APG
+        if (p.sectionMeasures !== undefined) setSectionMeasures(Number(p.sectionMeasures));
+        if (p.melodicVariation !== undefined) setMelodicVariation(Number(p.melodicVariation));
+        if (p.apgNormThreshold !== undefined) setApgNormThreshold(Number(p.apgNormThreshold));
+        if (p.apgMomentum !== undefined) setApgMomentum(Number(p.apgMomentum));
+        if (p.apgEta !== undefined) setApgEta(Number(p.apgEta));
+        if (p.noRepeatNgramSize !== undefined) setNoRepeatNgramSize(Number(p.noRepeatNgramSize));
+        if (p.vocalRange !== undefined) setVocalRange(Number(p.vocalRange));
+        if (p.vocalStyle !== undefined) setVocalStyle(Number(p.vocalStyle));
+        if (p.noteSustain !== undefined) setNoteSustain(Number(p.noteSustain));
+        // Advanced toggles
+        if (p.useAdg !== undefined) setUseAdg(p.useAdg);
+        if (p.cfgIntervalStart !== undefined) setCfgIntervalStart(Number(p.cfgIntervalStart));
+        if (p.cfgIntervalEnd !== undefined) setCfgIntervalEnd(Number(p.cfgIntervalEnd));
+        if (p.useCotMetas !== undefined) setUseCotMetas(p.useCotMetas);
+        if (p.useCotCaption !== undefined) setUseCotCaption(p.useCotCaption);
+        if (p.useCotLanguage !== undefined) setUseCotLanguage(p.useCotLanguage);
+        if (p.autogen !== undefined) setAutogen(p.autogen);
+        if (p.getScores !== undefined) setGetScores(p.getScores);
+        if (p.getLrc !== undefined) setGetLrc(p.getLrc);
+        if (p.scoreScale !== undefined) setScoreScale(Number(p.scoreScale));
+        if (p.lmBatchChunkSize !== undefined) setLmBatchChunkSize(Number(p.lmBatchChunkSize));
+        if (p.alignToMeasures !== undefined) setAlignToMeasures(p.alignToMeasures);
+        if (p.isFormatCaption !== undefined) setIsFormatCaption(p.isFormatCaption);
+        if (p.trackName !== undefined) setTrackName(p.trackName);
+        if (p.completeTrackClasses !== undefined) setCompleteTrackClasses(p.completeTrackClasses);
+        // Vocal separation
+        if (p.separationQuality !== undefined) setSeparationQuality(p.separationQuality as any);
+        if (p.useVocalAsReference !== undefined) setUseVocalAsReference(p.useVocalAsReference);
+        if (p.useInstrumentalAsSource !== undefined) setUseInstrumentalAsSource(p.useInstrumentalAsSource);
+      } else if (action.type === 'swapModel') {
+        setSelectedModel(action.model);
+        localStorage.setItem('ace-model', action.model);
+      } else if (action.type === 'generate') {
+        // Programmatic generation trigger — will be handled by clicking the generate button
+        // We emit a custom event that the generate button can listen to
+        document.dispatchEvent(new CustomEvent('ace-bridge-generate'));
+      }
+    });
+    return unsub;
+  }, []);
+
+  // ═══ End UIBridge ═══
 
   // Close model menu when clicking outside (checks both button wrapper and portal)
   useEffect(() => {
@@ -1283,6 +1450,17 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
     onAudioSelectionApplied?.();
   }, [pendingAudioSelection, onAudioSelectionApplied]);
 
+  // Consume pending lyrics from ChatAssistant
+  useEffect(() => {
+    if (!pendingLyrics) return;
+    if (pendingLyrics.mode === 'overwrite') {
+      setLyrics(pendingLyrics.text);
+    } else {
+      setLyrics(prev => prev ? prev + '\n\n' + pendingLyrics.text : pendingLyrics.text);
+    }
+    onLyricsApplied?.();
+  }, [pendingLyrics, onLyricsApplied]);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing) return;
@@ -1395,6 +1573,8 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
     const getDragKind = (e: DragEvent): 'file' | 'audio' | null => {
       if (!e.dataTransfer) return null;
       const types = Array.from(e.dataTransfer.types);
+      // If the drag includes a full song (for the chat assistant), ignore it here
+      if (types.includes('application/x-ace-song')) return null;
       if (types.includes('Files')) return 'file';
       if (types.includes('application/x-ace-audio')) return 'audio';
       return null;
@@ -2077,12 +2257,16 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
   };
 
   const handleWorkspaceDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    // Skip drags that include full song data (those go to the chat assistant)
+    if (e.dataTransfer.types.includes('application/x-ace-song')) return;
     if (e.dataTransfer.files?.length || e.dataTransfer.types.includes('application/x-ace-audio')) {
       handleDrop(e, audioTab);
     }
   };
 
   const handleWorkspaceDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    // Skip drags that include full song data (those go to the chat assistant)
+    if (e.dataTransfer.types.includes('application/x-ace-song')) return;
     if (e.dataTransfer.types.includes('Files') || e.dataTransfer.types.includes('application/x-ace-audio')) {
       e.preventDefault();
     }
@@ -4725,11 +4909,11 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
               label={t('inferenceSteps')}
               value={inferenceSteps}
               min={1}
-              max={isTurboModel(selectedModel) ? 20 : 200}
+              max={isTurboModel(selectedModel) ? 100 : 500}
               step={1}
               onChange={setInferenceSteps}
               helpText={t('moreStepsBetterQuality')}
-              title="More steps usually improves quality but slows generation."
+              title="More steps usually improves quality but slows generation. Turbo optimized for 8, but higher values may improve quality."
             />
 
             {/* Guidance Scale */}
@@ -4981,7 +5165,20 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
               <p className="text-[11px] text-zinc-400 dark:text-zinc-500">{t('controlSourceAudio')}</p>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400" title="Advanced: precomputed audio codes for conditioning.">{t('audioCodes')}</label>
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{t('audioCodes')}</label>
+                <button
+                  type="button"
+                  onClick={() => onShowInfo?.({
+                    title: 'Audio Codes (Códigos Semánticos)',
+                    content: `<p class="mb-1.5">Tokens semánticos a 5Hz que codifican la <span class="text-amber-300">melodía, ritmo y estructura</span> del audio. Cuando están presentes:</p><ul class="list-disc list-inside space-y-0.5 text-zinc-400"><li><span class="text-emerald-300">task_type</span> cambia automáticamente a <span class="text-orange-300">cover</span></li><li>El modelo sigue la estructura melódica de los códigos</li><li><span class="text-emerald-300">source audio</span> se ignora cuando hay códigos</li><li><span class="text-emerald-300">audio_cover_strength</span> controla la adherencia</li></ul><p class="mt-1.5 text-zinc-500">Usa "Convert to Codes" para extraer de un audio, o el Grabador de Voz que los extrae automáticamente.</p>`
+                  })}
+                  className="text-zinc-500 hover:text-indigo-400 transition-colors"
+                  title="Ver info sobre Audio Codes"
+                >
+                  <Info size={12} />
+                </button>
+              </div>
               <textarea
                 value={audioCodes}
                 onChange={(e) => setAudioCodes(e.target.value)}

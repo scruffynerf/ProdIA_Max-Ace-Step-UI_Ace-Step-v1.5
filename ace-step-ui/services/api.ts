@@ -83,9 +83,6 @@ export const authApi = {
 
   updateUsername: (username: string, token: string): Promise<AuthResponse> =>
     api('/api/auth/username', { method: 'PATCH', body: { username }, token }),
-
-  resetUser: (token: string): Promise<{ success: boolean; message: string }> =>
-    api('/api/auth/reset-user', { method: 'POST', token }),
 };
 
 // Songs API
@@ -390,6 +387,36 @@ export const generateApi = {
       throw new Error(error.details || error.error || 'Upload failed');
     }
     return response.json();
+  },
+
+  /**
+   * Extract 5Hz semantic audio codes from an uploaded audio file.
+   * These codes capture melody/rhythm structure and provide much stronger
+   * adherence than raw reference audio alone.
+   */
+  extractAudioCodes: async (audioUrl: string, token: string): Promise<{ audioCodes: string; codeCount: number }> => {
+    return api('/api/generate/extract-codes', { method: 'POST', body: { audioUrl }, token });
+  },
+
+  /**
+   * Transcribe audio to text using Whisper.
+   * Returns the transcribed text (lyrics/speech) from the audio file.
+   */
+  transcribeAudio: async (audioUrl: string, token: string, language?: string, model?: string): Promise<{ transcript: string; language: string }> => {
+    return api('/api/generate/transcribe', { method: 'POST', body: { audioUrl, language, model }, token });
+  },
+
+  /** Check if Whisper transcription is available on the server */
+  isWhisperAvailable: async (token: string): Promise<{ available: boolean; path?: string }> => {
+    return api('/api/generate/transcribe/available', { token });
+  },
+
+  /** List Whisper models with download status */
+  getWhisperModels: async (token: string): Promise<{
+    available: boolean;
+    models: Array<{ name: string; size: string; params: string; downloaded: boolean }>;
+  }> => {
+    return api('/api/generate/transcribe/models', { token });
   },
 
   formatInput: (params: {

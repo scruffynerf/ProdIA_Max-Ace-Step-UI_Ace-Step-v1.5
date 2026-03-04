@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Library, Disc, Search, LogIn, LogOut, Sun, Moon, GraduationCap, Newspaper, Power, RotateCcw, Loader2 } from 'lucide-react';
+import { Library, Disc, Search, LogIn, LogOut, Sun, Moon, GraduationCap, Newspaper, Power, RotateCcw, Loader2, Piano, Mic, X } from 'lucide-react';
 import { View } from '../types';
 import { useI18n } from '../context/I18nContext';
 
@@ -16,6 +16,10 @@ interface SidebarProps {
   onToggle?: () => void;
   onShutdown?: () => void;
   onRestart?: () => void;
+  onOpenChords?: () => void;
+  onOpenMic?: () => void;
+  infoText?: { title: string; content: string } | null;
+  onDismissInfo?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -31,6 +35,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggle,
   onShutdown,
   onRestart,
+  onOpenChords,
+  onOpenMic,
+  infoText,
+  onDismissInfo,
 }) => {
   const { t } = useI18n();
   const [stopCountdown, setStopCountdown] = useState<number | null>(null);
@@ -160,6 +168,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => onNavigate('news')}
           isExpanded={isOpen}
         />
+
+        {/* Chord Progression Tool */}
+        <div className="mt-1 pt-1 border-t border-zinc-200/10 dark:border-white/5">
+          <NavItem
+            icon={<Piano size={20} />}
+            label="Acordes"
+            active={false}
+            onClick={() => onOpenChords?.()}
+            isExpanded={isOpen}
+          />
+          <NavItem
+            icon={<Mic size={20} />}
+            label="Grabar Voz"
+            active={false}
+            onClick={() => onOpenMic?.()}
+            isExpanded={isOpen}
+          />
+        </div>
+
+        {/* Info Panel — shown when an info icon is clicked in CreatePanel */}
+        {isOpen && infoText && (
+          <div className="mx-1 mt-1 border border-indigo-500/30 bg-zinc-900/90 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-indigo-500/10 border-b border-indigo-500/20">
+              <span className="text-[11px] font-bold text-indigo-300 truncate">{infoText.title}</span>
+              <button
+                onClick={() => onDismissInfo?.()}
+                className="w-5 h-5 flex items-center justify-center rounded hover:bg-white/10 text-zinc-400 hover:text-white transition-colors flex-shrink-0"
+              >
+                <X size={12} />
+              </button>
+            </div>
+            <div className="max-h-48 overflow-y-auto p-3 text-[10px] text-zinc-300 leading-relaxed scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent"
+              dangerouslySetInnerHTML={{ __html: infoText.content }}
+            />
+          </div>
+        )}
 
         <div className="mt-auto flex flex-col gap-2">
           {/* Server Controls — icon-only */}

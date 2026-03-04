@@ -1,7 +1,10 @@
 import { Router, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
+import { promises as fsp } from 'fs';
+import { spawn } from 'child_process';
 import { pool } from '../db/pool.js';
 import { generateUUID } from '../db/sqlite.js';
 import { config } from '../config/index.js';
@@ -1202,6 +1205,342 @@ router.post('/list-audio-folder', authMiddleware, async (req: AuthenticatedReque
   } catch (error) {
     console.error('[ListAudioFolder] Error:', error);
     res.status(500).json({ error: (error as Error).message });
+  }
+});
+// ---------------------------------------------------------------------------
+// Extract semantic audio codes from an uploaded audio file
+// Uses the Gradio /convert_src_audio_to_codes endpoint to extract 5Hz semantic
+// tokens that capture melody/rhythm structure much more faithfully than raw
+// reference audio alone.
+// ---------------------------------------------------------------------------
+router.post('/extract-codes', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { audioUrl } = req.body as { audioUrl?: string };
+    if (!audioUrl) {
+      return res.status(400).json({ error: 'audioUrl is required' });
+    }
+
+    // Resolve the stored audio URL to a local file path
+    const resolveAudioPath = (url: string): string => {
+      if (url.startsWith('/audio/')) {
+        return path.join(config.audioDir, url.replace('/audio/', ''));
+      }
+      if (url.startsWith('http')) {
+        try {
+          const parsed = new URL(url);
+          if (parsed.pathname.startsWith('/audio/')) {
+            return path.join(config.audioDir, parsed.pathname.replace('/audio/', ''));
+          }
+        } catch { /* fall through */ }
+      }
+      return url;
+    };
+
+    const resolvedPath = resolveAudioPath(audioUrl);
+
+    const fs = await import('fs');
+    if (!fs.existsSync(resolvedPath)) {
+      return res.status(404).json({ error: `Audio file not found: ${resolvedPath}` });
+    }
+
+    const client = await getGradioClient();
+    let audioCodes = '';
+
+    // Try both possible endpoint names
+    try {
+      const result = await client.predict('/convert_src_audio_to_codes', [
+        { path: resolvedPath, orig_name: path.basename(resolvedPath) },
+      ]);
+      const data = result.data as unknown[];
+      audioCodes = (data[0] as string) || '';
+    } catch {
+      try {
+        const result = await client.predict('/convert_src_audio_to_codes_wrapper', [
+          { path: resolvedPath, orig_name: path.basename(resolvedPath) },
+        ]);
+        const data = result.data as unknown[];
+        audioCodes = (data[0] as string) || '';
+      } catch (e2) {
+        return res.status(501).json({
+          error: 'Failed to extract audio codes via Gradio',
+          hint: 'Ensure the model is initialized in the Gradio service.',
+          details: e2 instanceof Error ? e2.message : String(e2),
+        });
+      }
+    }
+
+    if (!audioCodes || audioCodes.startsWith('❌')) {
+      return res.status(500).json({ error: audioCodes || 'Failed to encode audio to codes' });
+    }
+
+    const codeCount = (audioCodes.match(/<\|audio_code_\d+\|>/g) || []).length;
+    console.log(`[ExtractCodes] Extracted ${codeCount} semantic tokens from ${path.basename(resolvedPath)}`);
+
+    res.json({ audioCodes, codeCount });
+  } catch (error) {
+    console.error('[ExtractCodes] Error:', error);
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Whisper transcription — transcribe an uploaded audio file to text
+// Uses Python + openai-whisper library to extract lyrics/speech from audio.
+// Falls back to whisper CLI if available.
+// ---------------------------------------------------------------------------
+
+/** Whisper model sizes with approximate disk sizes */
+const WHISPER_MODELS = [
+  { name: 'tiny',     size: '~75 MB',  params: '39M'  },
+  { name: 'base',     size: '~145 MB', params: '74M'  },
+  { name: 'small',    size: '~465 MB', params: '244M' },
+  { name: 'medium',   size: '~1.5 GB', params: '769M' },
+  { name: 'large',    size: '~3 GB',   params: '1550M' },
+  { name: 'large-v2', size: '~3 GB',   params: '1550M' },
+  { name: 'large-v3', size: '~3 GB',   params: '1550M' },
+  { name: 'turbo',    size: '~1.6 GB', params: '809M' },
+];
+
+/**
+ * Find a working Python executable that has whisper installed.
+ * Checks ACE-Step venv first, then system PATH.
+ */
+const findWhisperPython = async (): Promise<string | null> => {
+  // 1. Direct override
+  if (process.env.WHISPER_CMD) return process.env.WHISPER_CMD;
+
+  // 2. ACE-Step venv Python (most likely location)
+  const venvPythons = [
+    path.resolve(config.audioDir, '../../../ACE-Step-1.5_/.venv/Scripts/python.exe'),
+    path.resolve(config.audioDir, '../../../ACE-Step-1.5_/.venv/bin/python'),
+    path.resolve(config.audioDir, '../../../ACE-Step-1.5_/python_embeded/python.exe'),
+  ];
+  for (const pyPath of venvPythons) {
+    try {
+      await fsp.access(pyPath);
+      // Verify whisper is importable
+      const checkResult = await new Promise<boolean>((resolve) => {
+        const proc = spawn(pyPath, ['-c', 'import whisper; print("ok")'], { stdio: 'pipe' });
+        let output = '';
+        proc.stdout?.on('data', (d: Buffer) => { output += d.toString(); });
+        proc.on('close', (code) => resolve(code === 0 && output.includes('ok')));
+        proc.on('error', () => resolve(false));
+        setTimeout(() => { proc.kill(); resolve(false); }, 10000);
+      });
+      if (checkResult) return pyPath;
+    } catch { /* ignore */ }
+  }
+
+  // 3. Check whisper CLI in PATH as fallback
+  const pathEntries = (process.env.PATH || '').split(path.delimiter);
+  for (const entry of pathEntries) {
+    for (const name of ['whisper', 'whisper.exe']) {
+      const candidate = path.join(entry, name);
+      try {
+        await fsp.access(candidate);
+        return `CLI:${candidate}`; // prefix to distinguish CLI mode
+      } catch { /* ignore */ }
+    }
+  }
+  return null;
+};
+
+router.post('/transcribe', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { audioUrl, language, model } = req.body as { audioUrl?: string; language?: string; model?: string };
+    if (!audioUrl) {
+      return res.status(400).json({ error: 'audioUrl is required' });
+    }
+
+    // Validate model name if provided
+    const whisperModel = model && WHISPER_MODELS.some(m => m.name === model) ? model : 'base';
+
+    // Resolve audio URL → local file path
+    const resolveAudioPath = (url: string): string => {
+      if (url.startsWith('/audio/')) {
+        return path.join(config.audioDir, url.replace('/audio/', ''));
+      }
+      if (url.startsWith('http')) {
+        try {
+          const parsed = new URL(url);
+          if (parsed.pathname.startsWith('/audio/')) {
+            return path.join(config.audioDir, parsed.pathname.replace('/audio/', ''));
+          }
+        } catch { /* fall through */ }
+      }
+      return url;
+    };
+
+    const resolvedPath = resolveAudioPath(audioUrl);
+
+    const fsSync = await import('fs');
+    if (!fsSync.existsSync(resolvedPath)) {
+      return res.status(404).json({ error: `Audio file not found: ${resolvedPath}` });
+    }
+
+    const whisperPython = await findWhisperPython();
+    if (!whisperPython) {
+      return res.status(501).json({
+        error: 'Whisper not found',
+        hint: 'Install whisper: pip install openai-whisper (in ACE-Step venv)',
+      });
+    }
+
+    console.log(`[Transcribe] Using: ${whisperPython} model=${whisperModel} for ${path.basename(resolvedPath)}`);
+
+    let transcript = '';
+
+    if (whisperPython.startsWith('CLI:')) {
+      // CLI mode — use whisper executable directly
+      const cmd = whisperPython.slice(4);
+      const tempDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'whisper-'));
+      const outputDir = path.join(tempDir, 'out');
+      try {
+        await fsp.mkdir(outputDir, { recursive: true });
+        const args = [resolvedPath, '--model', whisperModel, '--output_format', 'txt',
+                      '--output_dir', outputDir, '--fp16', 'False'];
+        if (language) args.push('--language', language);
+
+        await new Promise<void>((resolve, reject) => {
+          const proc = spawn(cmd, args, { stdio: 'pipe' });
+          let stderr = '';
+          proc.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
+          proc.on('error', (err) => reject(new Error(`whisper error: ${err.message}`)));
+          proc.on('close', (code) => {
+            if (code === 0) resolve();
+            else reject(new Error(`Whisper exited ${code}: ${stderr.slice(-500)}`));
+          });
+        });
+
+        const files = await fsp.readdir(outputDir);
+        const txtFile = files.find((f) => f.endsWith('.txt'));
+        if (txtFile) {
+          transcript = (await fsp.readFile(path.join(outputDir, txtFile), 'utf8')).trim();
+        }
+      } finally {
+        try { await fsp.rm(tempDir, { recursive: true, force: true }); } catch { /* ignore */ }
+      }
+    } else {
+      // Python library mode — run whisper via Python inline script
+      const langArg = language ? `"${language}"` : 'None';
+      const escapedPath = resolvedPath.replace(/\\/g, '\\\\');
+      const pyScript = `
+import whisper, json, sys
+try:
+    model = whisper.load_model("${whisperModel}")
+    result = model.transcribe("${escapedPath}", language=${langArg}, fp16=False)
+    print(json.dumps({"text": result["text"].strip(), "language": result.get("language", "auto")}))
+except Exception as e:
+    print(json.dumps({"error": str(e)}), file=sys.stderr)
+    sys.exit(1)
+`.trim();
+
+      const output = await new Promise<string>((resolve, reject) => {
+        const proc = spawn(whisperPython, ['-c', pyScript], {
+          stdio: ['ignore', 'pipe', 'pipe'],
+          env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
+        });
+        let stdout = '';
+        let stderr = '';
+        proc.stdout?.on('data', (d: Buffer) => { stdout += d.toString(); });
+        proc.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
+        proc.on('error', (err) => reject(new Error(`python error: ${err.message}`)));
+        proc.on('close', (code) => {
+          if (code === 0) resolve(stdout.trim());
+          else reject(new Error(`Whisper failed (code ${code}): ${stderr.slice(-500)}`));
+        });
+      });
+
+      try {
+        const parsed = JSON.parse(output);
+        transcript = parsed.text || '';
+      } catch {
+        transcript = output; // fallback to raw output
+      }
+    }
+
+    if (!transcript) {
+      return res.status(500).json({ error: 'Whisper produced no output' });
+    }
+
+    console.log(`[Transcribe] Success: ${transcript.length} chars from ${path.basename(resolvedPath)}`);
+    res.json({ transcript, language: language || 'auto' });
+  } catch (error) {
+    console.error('[Transcribe] Error:', error);
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Check if Whisper is available
+router.get('/transcribe/available', authMiddleware, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const whisperPython = await findWhisperPython();
+    res.json({ available: !!whisperPython, path: whisperPython });
+  } catch {
+    res.json({ available: false });
+  }
+});
+
+// List available Whisper models with download status
+router.get('/transcribe/models', authMiddleware, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const whisperPython = await findWhisperPython();
+    if (!whisperPython || whisperPython.startsWith('CLI:')) {
+      // Can't check download status in CLI mode — return all as unknown
+      return res.json({
+        available: !!whisperPython,
+        models: WHISPER_MODELS.map(m => ({ ...m, downloaded: false })),
+      });
+    }
+
+    // Use Python to check which models are cached
+    const pyScript = `
+import json, os, sys
+try:
+    cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "whisper")
+    downloaded = set()
+    if os.path.isdir(cache_dir):
+        for f in os.listdir(cache_dir):
+            if f.endswith(".pt"):
+                downloaded.add(f.replace(".pt", ""))
+    # Also check XDG_CACHE_HOME
+    xdg = os.environ.get("XDG_CACHE_HOME")
+    if xdg:
+        alt = os.path.join(xdg, "whisper")
+        if os.path.isdir(alt):
+            for f in os.listdir(alt):
+                if f.endswith(".pt"):
+                    downloaded.add(f.replace(".pt", ""))
+    print(json.dumps(list(downloaded)))
+except Exception as e:
+    print(json.dumps([]), file=sys.stderr)
+    sys.exit(1)
+`.trim();
+
+    const output = await new Promise<string>((resolve, reject) => {
+      const proc = spawn(whisperPython, ['-c', pyScript], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
+      });
+      let stdout = '';
+      proc.stdout?.on('data', (d: Buffer) => { stdout += d.toString(); });
+      proc.on('error', () => resolve('[]'));
+      proc.on('close', (code) => resolve(stdout.trim() || '[]'));
+      setTimeout(() => { proc.kill(); resolve('[]'); }, 10000);
+    });
+
+    let downloaded: string[] = [];
+    try { downloaded = JSON.parse(output); } catch { /* ignore */ }
+
+    const models = WHISPER_MODELS.map(m => ({
+      ...m,
+      downloaded: downloaded.includes(m.name),
+    }));
+
+    res.json({ available: true, models });
+  } catch (error) {
+    console.error('[Whisper Models] Error:', error);
+    res.json({ available: false, models: WHISPER_MODELS.map(m => ({ ...m, downloaded: false })) });
   }
 });
 

@@ -6,10 +6,14 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-0.1.0-blue?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.2.0-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License">
   <img src="https://img.shields.io/badge/Platform-Windows-0078D6?style=flat-square&logo=windows" alt="Windows">
   <img src="https://img.shields.io/badge/ACE--Step-1.5-purple?style=flat-square" alt="ACE-Step 1.5">
+</p>
+
+<p align="center">
+  <img src="IMAGES/main.png" alt="ProdIA-MAX Screenshot" width="900">
 </p>
 
 ---
@@ -42,21 +46,61 @@
 
 ## ✨ MAX Additions / Añadidos MAX
 
+### 🎵 Generation & Audio
 | Feature | Status | Description |
 |---------|--------|-------------|
 | **Vocal Separation (Demucs)** | ✅ Beta | Separate vocals/instrumental from any song |
 | **Vocal Reference Tab** | ✅ | Dedicated vocal reference panel |
 | **Independent Audio Strengths** | ✅ | Separate reference + source strength sliders |
+| **Audio Codes System** | ✅ | Full semantic audio code pipeline — extract, apply & condition generation |
+| **Mic Recorder + Audio Codes** | ✅ | Record voice → auto-extract Audio Codes + optional Whisper transcription |
+| **Whisper Model Selector** | ✅ | Choose Whisper model (tiny→turbo) with download status indicators |
+| **Process + Whisper / Solo Procesar** | ✅ | Two-button workflow: extract codes with or without lyric transcription |
+| **Chord Progression Editor** | ✅ | Interactive chord builder with scale-aware suggestions and audio preview |
+| **1/4 Time Signature** | ✅ | Added 1/4 time signature option to all time signature selectors |
+
+### 🤖 AI Assistant & UX
+| Feature | Status | Description |
+|---------|--------|-------------|
+| **Chat Assistant** | ✅ | Built-in AI assistant (OpenRouter/local LLM) for music production guidance |
+| **LLM Provider Selector** | ✅ | Switch between OpenRouter models or local LLM endpoints |
+| **Language Selector** | ✅ | Full i18n — switch UI language (ES/EN/+more) |
+| **Sidebar Info Panel** | ✅ | Click info icons → scrollable info panel in sidebar (no clipping) |
+| **Professional Audio Player** | ✅ | Enhanced player with playback speed, shuffle, repeat modes |
+| **Song Cards & Drag-Drop** | ✅ | Visual song cards with drag-and-drop to playlists |
+| **Resizable Chat Panel** | ✅ | Drag to resize chat assistant panel |
+| **Style Editor** | ✅ | Edit and manage generation style presets |
+
+### 🔧 Production Tools
+| Feature | Status | Description |
+|---------|--------|-------------|
 | **Audio Metadata Tagging** | ✅ | ID3 tags (title, artist, BPM, key) in MP3s |
 | **Edit Metadata** | ✅ | Edit BPM, key, time signature, title in-app |
 | **LoRA Quick Unload** | ✅ | One-click unload on collapsed LoRA panel |
-| **Time Signature Labels** | ✅ | Proper 2/4, 3/4, 4/4, 6/8 notation |
+| **Time Signature Labels** | ✅ | Proper 1/4, 2/4, 3/4, 4/4, 5/4, 6/8, 7/8, 8/8 notation |
 | **Prepare for Training** | ✅ Beta | Quick button to prep songs for LoRA training |
 | **VRAM Safety** | ✅ | Generation locked during Demucs separation |
 | **BPM & Key Detection** | ✅ | `detectar_bpm_clave.py` — batch detect BPM/key |
 | **Lyric Transcription** | ✅ | `transcribir_letras.py` — Whisper-based transcription |
 | **Caption Tools** | ✅ | Apply/truncate training captions automatically |
 | **One-click Windows launchers** | ✅ | `.bat` scripts for setup, launch, and cleanup |
+
+---
+
+## 🏆 Best Quality Settings / Mejores Ajustes de Calidad
+
+> **IMPORTANT / IMPORTANTE:** Audio generation quality is **dramatically better** using the **base model at 124 inference steps** compared to turbo mode (8 steps). While turbo is faster (~3-5s per song), the base model at 124 steps produces significantly richer, more coherent, and higher-fidelity audio.
+>
+> **La calidad de generación de audio es MUCHÍSIMO mejor usando el modelo base a 124 pasos** en comparación con el modo turbo (8 pasos). Aunque turbo es más rápido (~3-5s por canción), el modelo base a 124 pasos produce audio significativamente más rico, más coherente y de mayor fidelidad.
+
+| Setting | Turbo (fast) | **Base (recommended)** |
+|---------|-------------|----------------------|
+| Model | `turbo` | **`base`** |
+| Inference Steps | 8 | **124** |
+| Speed (30s song) | ~3-5s | ~45-90s |
+| Quality | Good | **Excellent** ⭐ |
+| Coherence | Decent | **Very high** |
+| Recommended for | Quick previews | **Final production** |
 
 ---
 
@@ -92,6 +136,8 @@ Open / Abre: **http://localhost:3000**
 ProdIA-MAX/
 ├── ACE-Step-1.5_/          # ACE-Step 1.5 AI engine (original, MIT)
 ├── ace-step-ui/             # Base UI fork from fspecii (original, MIT)
+├── IMAGES/                  # Screenshots & product images
+│   └── main.png             # Main product screenshot
 ├── aplicar_captions_v3.py  # MAX: Auto-apply training captions
 ├── detectar_bpm_clave.py   # MAX: BPM & key detection (librosa)
 ├── transcribir_letras.py   # MAX: Lyric transcription (Whisper)
@@ -103,6 +149,40 @@ ProdIA-MAX/
 ├── verificar_modelos.bat   # Model verification
 └── limpiar_datos_usuario.bat # Clean user data
 ```
+
+---
+
+## 🎼 Audio Codes System / Sistema de Códigos de Audio
+
+ACE-Step uses **semantic audio codes** — tokens at 5Hz that encode melody, rhythm, structure, and timbre holistically. Each code (`<|audio_code_N|>`, N=0–63999) represents 200ms of audio.
+
+**How to use:**
+1. Load audio in **Source Audio** → click **"Convert to Codes"** → codes appear in the Audio Codes field
+2. Or use the **Voice Recorder** → "Process + Whisper" extracts codes automatically
+3. Write a **different text prompt** (e.g., change genre/style)
+4. Adjust **audio_cover_strength** (0.3–0.5 = new style with original structure)
+5. Generate → the model follows the code structure but with your new style
+
+| Property | Value |
+|----------|-------|
+| Rate | 5 codes/second (200ms each) |
+| Codebook size | 64,000 (FSQ: [8,8,8,5,5,5]) |
+| 30s song | ~150 codes |
+| 60s song | ~300 codes |
+| Quantizer | Finite Scalar Quantization (1 quantizer, 6D) |
+
+> **Note:** Individual codes encode ALL musical properties simultaneously (melody + rhythm + timbre). You cannot isolate rhythm from melody at the code level, but you can use codes as structural guidance while the text prompt controls style/instrumentation.
+
+---
+
+## 🎙️ Voice Recorder Workflow / Flujo del Grabador de Voz
+
+1. **Record** your voice/humming/beatbox
+2. Choose a **Whisper model** (tiny→turbo) — download status shown with ✓/↓ indicators
+3. Click **"Procesar + Whisper"** → extracts Audio Codes AND transcribes lyrics
+4. Or click **"Solo Procesar"** → extracts Audio Codes only (faster, no transcription)
+5. Click **"Aplicar"** → codes + lyrics are applied to the Create Panel
+6. The generation will use your voice structure as a musical guide
 
 ---
 

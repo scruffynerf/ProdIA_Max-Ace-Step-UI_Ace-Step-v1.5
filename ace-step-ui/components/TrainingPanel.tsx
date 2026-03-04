@@ -28,7 +28,7 @@ const LANGUAGES = [
   { value: 'unknown', label: 'Unknown' },
 ];
 
-const TIME_SIGS = ['', '2', '3', '4', '6', 'N/A'];
+const TIME_SIGS = ['', '1', '2', '3', '4', '6', 'N/A'];
 
 const DEVICES = ['auto', 'cuda', 'mps', 'xpu', 'cpu'];
 const BACKENDS = ['pt', 'vllm', 'mlx'];
