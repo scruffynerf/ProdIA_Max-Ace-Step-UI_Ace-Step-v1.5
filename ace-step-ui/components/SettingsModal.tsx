@@ -194,7 +194,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, t
                     {/* User Profile Section */}
                     <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-6">
                         <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white shadow-lg overflow-hidden">
+                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white shadow-lg overflow-hidden">
                                 {user.avatar_url ? (
                                     <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" />
                                 ) : (
@@ -213,7 +213,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, t
                                         onClose();
                                         setIsEditProfileOpen(true);
                                     }}
-                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                                    className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors"
                                 >
                                     <Edit3 size={16} />
                                     {t('editProfile')}
@@ -294,7 +294,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, t
                                 <select
                                     value={language}
                                     onChange={(e) => setLanguage(e.target.value as 'en' | 'es' | 'zh' | 'ja' | 'ko')}
-                                    className="w-full appearance-none py-3 px-4 pr-10 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium transition-colors hover:border-zinc-400 dark:hover:border-zinc-600 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 cursor-pointer"
+                                    className="w-full appearance-none py-3 px-4 pr-10 rounded-lg border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium transition-colors hover:border-zinc-400 dark:hover:border-zinc-600 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500 cursor-pointer"
                                 >
                                     <option value="en">{t('english')}</option>
                                     <option value="es">{t('spanish')}</option>
@@ -321,7 +321,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, t
                                 <button
                                     onClick={theme === 'dark' ? onToggleTheme : undefined}
                                     className={`flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-colors ${theme === 'light'
-                                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                        ? 'border-violet-500 bg-violet-50 text-violet-700'
                                         : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600'
                                         }`}
                                 >
@@ -330,7 +330,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, t
                                 <button
                                     onClick={theme === 'light' ? onToggleTheme : undefined}
                                     className={`flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-colors ${theme === 'dark'
-                                        ? 'border-indigo-500 bg-indigo-950 text-indigo-300'
+                                        ? 'border-violet-500 bg-violet-950 text-violet-300'
                                         : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600'
                                         }`}
                                 >

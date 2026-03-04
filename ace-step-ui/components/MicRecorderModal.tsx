@@ -647,8 +647,8 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
                     <button
                       onClick={togglePlayback}
                       className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-medium text-[11px] transition-colors ${isPlaying
-                          ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-                          : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700/40'
+                        ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700/40'
                         }`}
                     >
                       {isPlaying ? <Pause size={12} /> : <Play size={12} />}
@@ -715,8 +715,8 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
                                 <span className="text-zinc-500">{m.size}</span>
                               </span>
                               <span className={`text-[9px] px-1.5 py-0.5 rounded ${m.downloaded
-                                  ? 'bg-emerald-600/20 text-emerald-400'
-                                  : 'bg-zinc-700 text-zinc-500'
+                                ? 'bg-emerald-600/20 text-emerald-400'
+                                : 'bg-zinc-700 text-zinc-500'
                                 }`}>
                                 {m.downloaded ? t('downloaded', 'downloaded') : t('notDownloaded', 'not downloaded')}
                               </span>
@@ -733,8 +733,8 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
                       onClick={() => handleProcess(true)}
                       disabled={isProcessing || isTranscribing}
                       className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-[11px] transition-all border ${isProcessing || isTranscribing
-                          ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20 animate-pulse cursor-wait'
-                          : 'bg-gradient-to-r from-emerald-600/20 to-cyan-600/20 text-emerald-300 border-emerald-500/30 hover:from-emerald-600/30 hover:to-cyan-600/30 hover:border-emerald-500/50'
+                        ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20 animate-pulse cursor-wait'
+                        : 'bg-gradient-to-r from-emerald-600/20 to-cyan-600/20 text-emerald-300 border-emerald-500/30 hover:from-emerald-600/30 hover:to-cyan-600/30 hover:border-emerald-500/50'
                         }`}
                       title={t('processWhisperTooltip', 'Upload, extract semantic codes and transcribe with Whisper')}
                     >
@@ -746,8 +746,8 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
                       onClick={() => handleProcess(false)}
                       disabled={isProcessing || isTranscribing}
                       className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-[11px] transition-all border ${isProcessing
-                          ? 'bg-zinc-700/50 text-zinc-400 border-zinc-600/30 animate-pulse cursor-wait'
-                          : 'bg-zinc-800/80 text-zinc-300 border-zinc-700/40 hover:bg-zinc-700/60 hover:border-zinc-600'
+                        ? 'bg-zinc-700/50 text-zinc-400 border-zinc-600/30 animate-pulse cursor-wait'
+                        : 'bg-zinc-800/80 text-zinc-300 border-zinc-700/40 hover:bg-zinc-700/60 hover:border-zinc-600'
                         }`}
                       title={t('onlyProcessTooltip', 'Only upload and extract semantic codes (no transcription)')}
                     >
@@ -792,8 +792,8 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
                       <button
                         onClick={() => setMode('reference')}
                         className={`p-3 rounded-xl border-2 transition-all text-left ${mode === 'reference'
-                            ? 'border-indigo-500 bg-indigo-600/10'
-                            : 'border-zinc-700/40 bg-zinc-800/50 hover:border-zinc-600'
+                          ? 'border-indigo-500 bg-indigo-600/10'
+                          : 'border-zinc-700/40 bg-zinc-800/50 hover:border-zinc-600'
                           }`}
                       >
                         <div className="flex items-center gap-2 mb-1">
@@ -810,8 +810,8 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
                       <button
                         onClick={() => setMode('cover')}
                         className={`p-3 rounded-xl border-2 transition-all text-left ${mode === 'cover'
-                            ? 'border-orange-500 bg-orange-600/10'
-                            : 'border-zinc-700/40 bg-zinc-800/50 hover:border-zinc-600'
+                          ? 'border-orange-500 bg-orange-600/10'
+                          : 'border-zinc-700/40 bg-zinc-800/50 hover:border-zinc-600'
                           }`}
                       >
                         <div className="flex items-center gap-2 mb-1">
@@ -869,11 +869,11 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
           <div className="flex items-center gap-3">
             {applyStatus && (
               <span className={`text-[10px] font-medium animate-in fade-in duration-200 ${applyStatus.startsWith('✅') ? 'text-green-400' :
-                  applyStatus.startsWith('❌') ? 'text-red-400' :
-                    'text-zinc-400'
+                applyStatus.startsWith('❌') ? 'text-red-400' :
+                  'text-zinc-400'
                 }`}>
                 {isApplying && !applyStatus.startsWith('✅') && !applyStatus.startsWith('❌') && (
-                  <span className="inline-block w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />
+                  <span className="inline-block w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />
                 )}
                 {applyStatus}
               </span>
@@ -883,10 +883,10 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
               onClick={handleApply}
               disabled={!recordedBlob || isApplying || isRecording}
               className={`flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium rounded-lg transition-all ${recordedBlob && !isApplying
-                  ? mode === 'reference'
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white'
-                    : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white'
-                  : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                ? mode === 'reference'
+                  ? 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white'
+                  : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white'
+                : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
                 }`}
             >
               <Upload size={12} />

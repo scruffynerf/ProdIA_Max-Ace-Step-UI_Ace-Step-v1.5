@@ -267,10 +267,10 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
     <div ref={containerRef} className={`${compact ? '' : 'bg-zinc-900/80 rounded-2xl border border-zinc-700/30 overflow-hidden'}`}>
       {/* Header */}
       {!compact && (
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700/30 bg-gradient-to-r from-indigo-900/20 to-purple-900/20">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700/30 bg-gradient-to-r from-violet-900/20 to-purple-900/20">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-indigo-600/30 flex items-center justify-center">
-              <Music size={14} className="text-indigo-400" />
+            <div className="w-7 h-7 rounded-lg bg-violet-600/30 flex items-center justify-center">
+              <Music size={14} className="text-violet-400" />
             </div>
             <div>
               <h3 className="text-[13px] font-semibold text-white">Progresión de Acordes</h3>
@@ -297,7 +297,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
             <select
               value={value.key}
               onChange={(e) => { onChange({ ...value, key: e.target.value }); handleStop(); }}
-              className="bg-zinc-800 text-[11px] text-white border border-zinc-700/40 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500/50 cursor-pointer"
+              className="bg-zinc-800 text-[11px] text-white border border-zinc-700/40 rounded-lg px-2 py-1.5 outline-none focus:border-violet-500/50 cursor-pointer"
             >
               {AVAILABLE_KEYS.map(k => (
                 <option key={k} value={k}>{displayKey(k)}</option>
@@ -313,7 +313,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
                 onClick={() => { onChange({ ...value, scale: opt.value }); handleStop(); }}
                 className={`px-2.5 py-1.5 text-[10px] font-medium transition-colors ${
                   value.scale === opt.value
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-violet-600 text-white'
                     : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
@@ -345,7 +345,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
                 onBlur={() => {
                   if (!value.bpm || value.bpm < 40) onChange({ ...value, bpm: 120 });
                 }}
-                className="w-14 bg-zinc-800 text-[11px] text-white border border-zinc-700/40 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500/50 text-center"
+                className="w-14 bg-zinc-800 text-[11px] text-white border border-zinc-700/40 rounded-lg px-2 py-1.5 outline-none focus:border-violet-500/50 text-center"
               />
             </div>
           )}
@@ -354,7 +354,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
           <div className="flex-1" />
           <button
             onClick={randomize}
-            className="p-1.5 text-zinc-500 hover:text-indigo-400 rounded-lg hover:bg-zinc-800/80 transition-colors"
+            className="p-1.5 text-zinc-500 hover:text-violet-400 rounded-lg hover:bg-zinc-800/80 transition-colors"
             title="Progresión aleatoria"
           >
             <Shuffle size={13} />
@@ -363,7 +363,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
             onClick={() => setShowPresets(!showPresets)}
             className={`flex items-center gap-1 px-2 py-1.5 text-[10px] font-medium rounded-lg transition-colors border ${
               showPresets
-                ? 'bg-indigo-600/20 text-indigo-400 border-indigo-500/30'
+                ? 'bg-violet-600/20 text-violet-400 border-violet-500/30'
                 : 'bg-zinc-800 text-zinc-400 hover:text-white border-zinc-700/30'
             }`}
           >
@@ -418,9 +418,9 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
                   onDragEnd={handleDragEnd}
                   className={`relative flex-shrink-0 w-[60px] rounded-xl border-2 transition-all duration-200 cursor-pointer select-none
                     ${isDragging ? 'opacity-40 scale-95' : ''}
-                    ${isDragOver ? 'border-indigo-400 border-dashed bg-indigo-600/10' : ''}
+                    ${isDragOver ? 'border-violet-400 border-dashed bg-violet-600/10' : ''}
                     ${!isDragging && !isDragOver && isActive
-                      ? 'border-indigo-400 bg-indigo-600/20 shadow-lg shadow-indigo-500/20 scale-105'
+                      ? 'border-violet-400 bg-violet-600/20 shadow-lg shadow-violet-500/20 scale-105'
                       : !isDragging && !isDragOver && isEditing
                         ? 'border-purple-400 bg-purple-600/10'
                         : !isDragging && !isDragOver
@@ -450,12 +450,12 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
 
                   <div className="flex flex-col items-center justify-center h-full py-2 px-1">
                     {/* Roman numeral */}
-                    <span className={`text-[13px] font-bold ${isActive ? 'text-indigo-300' : 'text-white'}`}>
+                    <span className={`text-[13px] font-bold ${isActive ? 'text-violet-300' : 'text-white'}`}>
                       {token}
                     </span>
                     {/* Resolved chord name */}
                     {chord && (
-                      <span className={`text-[9px] mt-0.5 ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`}>
+                      <span className={`text-[9px] mt-0.5 ${isActive ? 'text-violet-400' : 'text-zinc-500'}`}>
                         {chord.name}
                       </span>
                     )}
@@ -464,7 +464,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
                       {(chord?.notes || []).slice(0, 4).map((_, ni) => (
                         <div
                           key={ni}
-                          className={`w-1 h-1 rounded-full ${isActive ? 'bg-indigo-400' : 'bg-zinc-600'}`}
+                          className={`w-1 h-1 rounded-full ${isActive ? 'bg-violet-400' : 'bg-zinc-600'}`}
                         />
                       ))}
                     </div>
@@ -480,7 +480,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
                   const defaultChord = value.scale === 'major' ? 'I' : 'i';
                   addChord(defaultChord);
                 }}
-                className="flex-shrink-0 w-[44px] rounded-xl border-2 border-dashed border-zinc-700/40 bg-zinc-800/30 hover:border-indigo-500/40 hover:bg-indigo-600/5 flex items-center justify-center transition-colors"
+                className="flex-shrink-0 w-[44px] rounded-xl border-2 border-dashed border-zinc-700/40 bg-zinc-800/30 hover:border-violet-500/40 hover:bg-violet-600/5 flex items-center justify-center transition-colors"
                 title="Añadir acorde"
               >
                 <Plus size={16} className="text-zinc-600" />
@@ -515,7 +515,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
                   onClick={() => { updateToken(editingIdx, qc); auditionChord(qc); }}
                   className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
                     tokens[editingIdx] === qc
-                      ? 'bg-indigo-600 text-white'
+                      ? 'bg-violet-600 text-white'
                       : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                   }`}
                 >
@@ -553,7 +553,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
                 onChange({ ...value, roman: joinRoman(newTokens) });
               }}
               onKeyDown={(e) => { if (e.key === 'Enter') setEditingIdx(null); }}
-              className="w-full bg-zinc-900 text-[11px] text-white border border-zinc-700/40 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500/50 font-mono"
+              className="w-full bg-zinc-900 text-[11px] text-white border border-zinc-700/40 rounded-lg px-2.5 py-1.5 outline-none focus:border-violet-500/50 font-mono"
               placeholder="Ej: IV, vi7, IImaj7..."
             />
           </div>
@@ -567,7 +567,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
             className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
               isPlaying
                 ? 'bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/30'
-                : 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600/30'
+                : 'bg-violet-600/20 text-violet-400 border border-violet-500/30 hover:bg-violet-600/30'
             }`}
           >
             {isPlaying ? <Square size={11} /> : <Play size={11} />}
@@ -601,7 +601,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
                     }}
                     className={`px-2 py-1 text-[9px] font-bold transition-colors ${
                       (value.beatsPerChord || 2) === beats
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-violet-600 text-white'
                         : 'text-zinc-500 hover:text-zinc-300'
                     }`}
                     title={`${beats} beat${beats > 1 ? 's' : ''} por acorde (${desc})`}
@@ -622,7 +622,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
           {showApply && onApply && (
             <button
               onClick={handleApply}
-              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white rounded-lg transition-colors"
             >
               <Zap size={11} />
               Aplicar
@@ -649,7 +649,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
                   onClick={() => setPresetFilter(mood)}
                   className={`px-2 py-1 text-[9px] font-medium rounded-md transition-colors ${
                     presetFilter === mood
-                      ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/30'
+                      ? 'bg-violet-600/30 text-violet-300 border border-violet-500/30'
                       : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
@@ -675,7 +675,7 @@ export function ChordProgressionEditor({ value, onChange, onApply, compact = fal
                     <p className="text-[9px] text-zinc-500 truncate">{preset.roman}</p>
                     <p className="text-[9px] text-zinc-600 truncate">{preset.description}</p>
                   </div>
-                  <Play size={10} className="text-zinc-600 group-hover:text-indigo-400 flex-shrink-0 transition-colors" />
+                  <Play size={10} className="text-zinc-600 group-hover:text-violet-400 flex-shrink-0 transition-colors" />
                 </button>
               ))}
             </div>
@@ -891,63 +891,63 @@ export function ChordModal({ isOpen, onClose, onApplyFull, projectBpm }: ChordMo
         {/* Resize handles */}
         {/* Left edge */}
         <div
-          className="absolute left-0 top-4 bottom-4 w-1.5 cursor-col-resize z-20 hover:bg-indigo-500/30 active:bg-indigo-500/50 rounded-r transition-colors"
+          className="absolute left-0 top-4 bottom-4 w-1.5 cursor-col-resize z-20 hover:bg-violet-500/30 active:bg-violet-500/50 rounded-r transition-colors"
           onPointerDown={(e) => handleResizeStart(e, 'left')}
           onPointerMove={handleResizeMove}
           onPointerUp={handleResizeEnd}
         />
         {/* Right edge */}
         <div
-          className="absolute right-0 top-4 bottom-4 w-1.5 cursor-col-resize z-20 hover:bg-indigo-500/30 active:bg-indigo-500/50 rounded-l transition-colors"
+          className="absolute right-0 top-4 bottom-4 w-1.5 cursor-col-resize z-20 hover:bg-violet-500/30 active:bg-violet-500/50 rounded-l transition-colors"
           onPointerDown={(e) => handleResizeStart(e, 'right')}
           onPointerMove={handleResizeMove}
           onPointerUp={handleResizeEnd}
         />
         {/* Bottom edge */}
         <div
-          className="absolute bottom-0 left-4 right-4 h-1.5 cursor-row-resize z-20 hover:bg-indigo-500/30 active:bg-indigo-500/50 rounded-t transition-colors"
+          className="absolute bottom-0 left-4 right-4 h-1.5 cursor-row-resize z-20 hover:bg-violet-500/30 active:bg-violet-500/50 rounded-t transition-colors"
           onPointerDown={(e) => handleResizeStart(e, 'bottom')}
           onPointerMove={handleResizeMove}
           onPointerUp={handleResizeEnd}
         />
         {/* Top edge */}
         <div
-          className="absolute top-0 left-4 right-4 h-1.5 cursor-row-resize z-20 hover:bg-indigo-500/30 active:bg-indigo-500/50 rounded-b transition-colors"
+          className="absolute top-0 left-4 right-4 h-1.5 cursor-row-resize z-20 hover:bg-violet-500/30 active:bg-violet-500/50 rounded-b transition-colors"
           onPointerDown={(e) => handleResizeStart(e, 'top')}
           onPointerMove={handleResizeMove}
           onPointerUp={handleResizeEnd}
         />
         {/* Corner handles */}
         <div
-          className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize z-30 hover:bg-indigo-500/40 active:bg-indigo-500/60 rounded-tl transition-colors"
+          className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize z-30 hover:bg-violet-500/40 active:bg-violet-500/60 rounded-tl transition-colors"
           onPointerDown={(e) => handleResizeStart(e, 'br')}
           onPointerMove={handleResizeMove}
           onPointerUp={handleResizeEnd}
         />
         <div
-          className="absolute bottom-0 left-0 w-3 h-3 cursor-nesw-resize z-30 hover:bg-indigo-500/40 active:bg-indigo-500/60 rounded-tr transition-colors"
+          className="absolute bottom-0 left-0 w-3 h-3 cursor-nesw-resize z-30 hover:bg-violet-500/40 active:bg-violet-500/60 rounded-tr transition-colors"
           onPointerDown={(e) => handleResizeStart(e, 'bl')}
           onPointerMove={handleResizeMove}
           onPointerUp={handleResizeEnd}
         />
         <div
-          className="absolute top-0 right-0 w-3 h-3 cursor-nesw-resize z-30 hover:bg-indigo-500/40 active:bg-indigo-500/60 rounded-bl transition-colors"
+          className="absolute top-0 right-0 w-3 h-3 cursor-nesw-resize z-30 hover:bg-violet-500/40 active:bg-violet-500/60 rounded-bl transition-colors"
           onPointerDown={(e) => handleResizeStart(e, 'tr')}
           onPointerMove={handleResizeMove}
           onPointerUp={handleResizeEnd}
         />
         <div
-          className="absolute top-0 left-0 w-3 h-3 cursor-nwse-resize z-30 hover:bg-indigo-500/40 active:bg-indigo-500/60 rounded-br transition-colors"
+          className="absolute top-0 left-0 w-3 h-3 cursor-nwse-resize z-30 hover:bg-violet-500/40 active:bg-violet-500/60 rounded-br transition-colors"
           onPointerDown={(e) => handleResizeStart(e, 'tl')}
           onPointerMove={handleResizeMove}
           onPointerUp={handleResizeEnd}
         />
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-700/30 bg-gradient-to-r from-indigo-900/25 to-purple-900/15 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-700/30 bg-gradient-to-r from-violet-900/25 to-purple-900/15 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600/30 flex items-center justify-center">
-              <Piano size={16} className="text-indigo-400" />
+            <div className="w-8 h-8 rounded-xl bg-violet-600/30 flex items-center justify-center">
+              <Piano size={16} className="text-violet-400" />
             </div>
             <div>
               <h2 className="text-[14px] font-bold text-white">Progresión de Acordes</h2>
@@ -986,7 +986,7 @@ export function ChordModal({ isOpen, onClose, onApplyFull, projectBpm }: ChordMo
                 type="checkbox"
                 checked={useAutoReference}
                 onChange={(e) => setUseAutoReference(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-800 text-indigo-600 focus:ring-indigo-500/30 cursor-pointer"
+                className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-800 text-violet-600 focus:ring-violet-500/30 cursor-pointer"
               />
               <span className="text-[10px] text-zinc-400 font-medium">
                 Inyectar audio de referencia automático
@@ -1003,7 +1003,7 @@ export function ChordModal({ isOpen, onClose, onApplyFull, projectBpm }: ChordMo
                   step={0.05}
                   value={refStrength}
                   onChange={(e) => setRefStrength(parseFloat(e.target.value))}
-                  className="w-20 h-1 accent-indigo-500"
+                  className="w-20 h-1 accent-violet-500"
                 />
                 <span className="text-[9px] text-zinc-400 font-mono w-6 text-right">{Math.round(refStrength * 100)}%</span>
               </div>
@@ -1020,7 +1020,7 @@ export function ChordModal({ isOpen, onClose, onApplyFull, projectBpm }: ChordMo
                 'text-zinc-400'
               }`}>
                 {isApplying && !applyStatus.startsWith('✅') && !applyStatus.startsWith('❌') && (
-                  <span className="inline-block w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />
+                  <span className="inline-block w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />
                 )}
                 {applyStatus}
               </span>
@@ -1083,10 +1083,10 @@ export function InlineChordPreview({ roman, keyName, scale, onApply }: InlineCho
   const isPlaying = engineRef.current?.isPlaying ?? false;
 
   return (
-    <div className="mt-2 p-2.5 bg-indigo-900/15 rounded-xl border border-indigo-500/20">
+    <div className="mt-2 p-2.5 bg-violet-900/15 rounded-xl border border-violet-500/20">
       <div className="flex items-center gap-1.5 mb-2">
-        <Music size={11} className="text-indigo-400" />
-        <span className="text-[10px] font-semibold text-indigo-400">
+        <Music size={11} className="text-violet-400" />
+        <span className="text-[10px] font-semibold text-violet-400">
           Progresión: {keyName} {scale === 'major' ? 'Mayor' : 'Menor'}
         </span>
       </div>
@@ -1098,11 +1098,11 @@ export function InlineChordPreview({ roman, keyName, scale, onApply }: InlineCho
             key={i}
             className={`flex-1 py-1.5 rounded-lg text-center transition-all ${
               activeIdx === i
-                ? 'bg-indigo-600/30 border border-indigo-400 scale-105'
+                ? 'bg-violet-600/30 border border-violet-400 scale-105'
                 : 'bg-zinc-800/60 border border-zinc-700/30'
             }`}
           >
-            <span className={`text-[11px] font-bold ${activeIdx === i ? 'text-indigo-300' : 'text-white'}`}>
+            <span className={`text-[11px] font-bold ${activeIdx === i ? 'text-violet-300' : 'text-white'}`}>
               {chord.name}
             </span>
           </div>
@@ -1116,7 +1116,7 @@ export function InlineChordPreview({ roman, keyName, scale, onApply }: InlineCho
           className={`flex-1 py-1.5 text-[10px] font-medium rounded-md transition-colors flex items-center justify-center gap-1 ${
             isPlaying
               ? 'bg-red-600/20 text-red-400 border border-red-500/20'
-              : 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-600/30'
+              : 'bg-violet-600/20 text-violet-400 border border-violet-500/20 hover:bg-violet-600/30'
           }`}
         >
           {isPlaying ? <Square size={9} /> : <Play size={9} />}
@@ -1125,7 +1125,7 @@ export function InlineChordPreview({ roman, keyName, scale, onApply }: InlineCho
         {onApply && (
           <button
             onClick={handleApply}
-            className="flex-1 py-1.5 text-[10px] font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors flex items-center justify-center gap-1"
+            className="flex-1 py-1.5 text-[10px] font-medium bg-violet-600 hover:bg-violet-500 text-white rounded-md transition-colors flex items-center justify-center gap-1"
           >
             <Zap size={9} />
             Aplicar
