@@ -421,22 +421,57 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
   }, [recordedBlob, token, uploadAndGetUrl, whisperAvailable, selectedWhisperModel, t]);
 
   // ---------------------------------------------------------------------------
-  // Apply — convert to WAV and send to parent
+  // Apply — auto-process if needed (extract codes + optional whisper), then send to parent
   // ---------------------------------------------------------------------------
 
   const handleApply = useCallback(async () => {
     if (!recordedBlob || !onApply) return;
 
     setIsApplying(true);
-    setApplyStatus(t('processingRecording', 'Processing recording...'));
 
     try {
-      // Convert webm to WAV using AudioContext decode + manual WAV encode
+      let codes = extractedCodes;
+
+      // Auto-process if not yet processed: upload + extract codes + optional whisper
+      if (!isProcessed && token) {
+        setApplyStatus(`⚙️ ${t('uploadingAudio', 'Uploading audio...')}`);
+        const url = await uploadAndGetUrl();
+
+        // Extract audio codes
+        setApplyStatus(`🧠 ${t('extractingCodes', 'Extracting semantic codes...')}`);
+        try {
+          const codesResult = await generateApi.extractAudioCodes(url, token);
+          if (codesResult.audioCodes && codesResult.codeCount > 0) {
+            codes = codesResult.audioCodes;
+            setExtractedCodes(codes);
+            setApplyStatus(`✅ ${t('codesExtracted', { count: codesResult.codeCount, defaultValue: '{{count}} codes extracted' })}`);
+          }
+        } catch (codeErr) {
+          console.warn('Audio code extraction failed:', codeErr);
+          // Continue without codes — timbre-only reference still works
+        }
+
+        // Whisper transcription if available and no lyrics yet
+        if (whisperAvailable && !lyrics.trim()) {
+          setApplyStatus(`🎙️ ${t('whisperTranscribing', 'Transcribing...')}`);
+          try {
+            const result = await generateApi.transcribeAudio(url, token, undefined, selectedWhisperModel);
+            if (result.transcript) {
+              setLyrics(result.transcript);
+            }
+          } catch {
+            // Transcription is optional — continue
+          }
+        }
+
+        setIsProcessed(true);
+      }
+
+      // Convert webm to WAV
+      setApplyStatus(t('processingRecording', 'Processing recording...'));
       const arrayBuffer = await recordedBlob.arrayBuffer();
       const audioCtx = new AudioContext({ sampleRate: 44100 });
       const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
-      // Encode to WAV
       const wavBlob = audioBufferToWav(audioBuffer);
       audioCtx.close().catch(() => { });
 
@@ -447,13 +482,11 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
         mode,
         strength,
         lyrics: lyrics.trim(),
-        audioCodes: extractedCodes || undefined,
+        audioCodes: codes || undefined,
       });
 
       setApplyStatus(`✅ ${t('recordingApplied', 'Recording applied!')}`);
-      setTimeout(() => {
-        setApplyStatus(null);
-      }, 2000);
+      setTimeout(() => setApplyStatus(null), 2000);
     } catch (err: any) {
       console.error('Apply recording error:', err);
       setApplyStatus(`❌ ${t('error', 'Error')}: ${err?.message || t('failure', 'failure')}`);
@@ -461,7 +494,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
     } finally {
       setIsApplying(false);
     }
-  }, [recordedBlob, onApply, recordingTitle, mode, strength, lyrics, extractedCodes, t]);
+  }, [recordedBlob, onApply, recordingTitle, mode, strength, lyrics, extractedCodes, isProcessed, token, uploadAndGetUrl, whisperAvailable, selectedWhisperModel, t]);
 
   // ---------------------------------------------------------------------------
   // WAV encoder (16-bit PCM)
@@ -881,8 +914,8 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
             <div className="flex-1" />
             <button
               onClick={handleApply}
-              disabled={!recordedBlob || isApplying || isRecording}
-              className={`flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium rounded-lg transition-all ${recordedBlob && !isApplying
+              disabled={!recordedBlob || isApplying || isRecording || isProcessing}
+              className={`flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium rounded-lg transition-all ${recordedBlob && !isApplying && !isProcessing
                 ? mode === 'reference'
                   ? 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white'
                   : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white'
@@ -890,7 +923,12 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
                 }`}
             >
               <Upload size={12} />
-              {mode === 'reference' ? t('useAsReference', 'Use as Reference') : t('useAsVocal', 'Use as Vocal')}
+              {isApplying
+                ? t('applying', 'Applying...')
+                : mode === 'reference'
+                  ? t('useAsReference', 'Use as Reference')
+                  : t('useAsVocal', 'Use as Vocal')
+              }
             </button>
           </div>
         </div>
