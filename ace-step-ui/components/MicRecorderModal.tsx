@@ -1,18 +1,11 @@
 /**
  * MicRecorderModal.tsx — Record voice from microphone and use as reference audio.
- *
- * Features:
- *   - Record from mic using MediaRecorder API
- *   - Live waveform visualization while recording
- *   - Playback preview of recording
- *   - Choose usage mode: Reference Audio (instrumental guide) or Vocal Cover
- *   - Adjustable influence strength
- *   - One-click apply → uploads WAV + sets UIBridge params
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mic, Square, Play, Pause, X, Upload, Music, Waves, Trash2, Timer, FileText, Type, Languages, Cpu, Download, Info, Check, ChevronDown } from 'lucide-react';
 import { generateApi } from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -53,6 +46,8 @@ function formatTime(seconds: number): string {
 // ---------------------------------------------------------------------------
 
 export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, token }: MicRecorderModalProps) {
+  const { t } = useTranslation();
+
   // Recording state
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -89,7 +84,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
   const [strength, setStrength] = useState(() => {
     try { return parseFloat(localStorage.getItem('mic-strength') || '0.6'); } catch { return 0.6; }
   });
-  const [recordingTitle, setRecordingTitle] = useState('Grabación de Voz');
+  const [recordingTitle, setRecordingTitle] = useState(t('voiceRecording', 'Voice Recording'));
 
   // Sync lyrics from Create Panel when modal opens
   useEffect(() => {
@@ -148,7 +143,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
       stopRecording();
       stopPlayback();
       if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-        audioCtxRef.current.close().catch(() => {});
+        audioCtxRef.current.close().catch(() => { });
       }
     };
   }, [isOpen]);
@@ -261,10 +256,10 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
     } catch (err: any) {
       console.error('Microphone access denied:', err);
       setHasPermission(false);
-      setApplyStatus('❌ No se pudo acceder al micrófono');
+      setApplyStatus(`❌ ${t('micAccessDenied', 'Could not access microphone')}`);
       setTimeout(() => setApplyStatus(null), 3000);
     }
-  }, [drawWaveform]);
+  }, [drawWaveform, t]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -284,7 +279,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
     }
     analyserRef.current = null;
     if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-      audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current.close().catch(() => { });
       audioCtxRef.current = null;
     }
     setIsRecording(false);
@@ -349,7 +344,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
     const audioCtx = new AudioContext({ sampleRate: 44100 });
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
     const wavBlob = audioBufferToWav(audioBuffer);
-    audioCtx.close().catch(() => {});
+    audioCtx.close().catch(() => { });
 
     const safeName = recordingTitle.replace(/[^a-zA-Z0-9_\-]/g, '_');
     const file = new File([wavBlob], `${safeName}.wav`, { type: 'audio/wav' });
@@ -362,24 +357,24 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
     if (!recordedBlob || !token) return;
 
     setIsProcessing(true);
-    setApplyStatus('⚙️ Subiendo audio...');
+    setApplyStatus(`⚙️ ${t('uploadingAudio', 'Uploading audio...')}`);
 
     try {
       const url = await uploadAndGetUrl();
 
       // Extract audio codes (semantic tokens for melody/rhythm conditioning)
-      setApplyStatus('🧠 Extrayendo códigos semánticos...');
+      setApplyStatus(`🧠 ${t('extractingCodes', 'Extracting semantic codes...')}`);
       try {
         const codesResult = await generateApi.extractAudioCodes(url, token);
         if (codesResult.audioCodes && codesResult.codeCount > 0) {
           setExtractedCodes(codesResult.audioCodes);
-          setApplyStatus(`✅ ${codesResult.codeCount} códigos extraídos`);
+          setApplyStatus(`✅ ${t('codesExtracted', { count: codesResult.codeCount, defaultValue: '{{count}} codes extracted' })}`);
         } else {
-          setApplyStatus('⚠️ No se pudieron extraer códigos (se usará solo timbre)');
+          setApplyStatus(`⚠️ ${t('codesFailedTimbreOnly', 'Could not extract codes (timbre only)')}`);
         }
       } catch (codeErr) {
         console.warn('Audio code extraction failed:', codeErr);
-        setApplyStatus('⚠️ Extracción de códigos falló (se usará timbre)');
+        setApplyStatus(`⚠️ ${t('codesExtractionError', 'Code extraction failed (timbre only)')}`);
       }
 
       setIsProcessed(true);
@@ -387,7 +382,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
       // Whisper transcription if requested
       if (withWhisper && whisperAvailable) {
         setIsTranscribing(true);
-        setApplyStatus('🎙️ Whisper transcribiendo...');
+        setApplyStatus(`🎙️ ${t('whisperTranscribing', 'Whispers transcribing...')}`);
         try {
           const result = await generateApi.transcribeAudio(url, token, undefined, selectedWhisperModel);
           if (result.transcript) {
@@ -396,17 +391,17 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
               if (!trimmed) return result.transcript;
               return `${trimmed}\n\n${result.transcript}`;
             });
-            setApplyStatus(`✅ Procesado + transcrito (${result.transcript.length} chars)`);
+            setApplyStatus(`✅ ${t('transcriptionSuccess', { count: result.transcript.length, defaultValue: 'Processed + transcribed ({{count}} chars)' })}`);
           } else {
-            setApplyStatus('✅ Procesado — Whisper no detectó texto');
+            setApplyStatus(`✅ ${t('transcriptionNoText', 'Processed — Whisper detected no text')}`);
           }
         } catch (err: any) {
           console.error('Whisper transcription failed:', err);
           const msg = err?.message || 'error';
           if (msg.includes('501') || msg.includes('not found')) {
-            setApplyStatus('✅ Procesado — modelo Whisper no descargado');
+            setApplyStatus(`✅ ${t('whisperModelNotFound', 'Processed — Whisper model not downloaded')}`);
           } else {
-            setApplyStatus(`✅ Procesado — transcripción falló: ${msg}`);
+            setApplyStatus(`✅ ${t('transcriptionError', { error: msg, defaultValue: 'Processed — transcription failed: {{error}}' })}`);
           }
         } finally {
           setIsTranscribing(false);
@@ -418,12 +413,12 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
       setTimeout(() => setApplyStatus(null), 4000);
     } catch (err: any) {
       console.error('Processing failed:', err);
-      setApplyStatus(`❌ Error procesando: ${err?.message || 'fallo'}`);
+      setApplyStatus(`❌ ${t('processingError', { error: err?.message || 'failure', defaultValue: 'Error processing: {{error}}' })}`);
       setTimeout(() => setApplyStatus(null), 5000);
     } finally {
       setIsProcessing(false);
     }
-  }, [recordedBlob, token, uploadAndGetUrl, whisperAvailable, selectedWhisperModel]);
+  }, [recordedBlob, token, uploadAndGetUrl, whisperAvailable, selectedWhisperModel, t]);
 
   // ---------------------------------------------------------------------------
   // Apply — convert to WAV and send to parent
@@ -433,7 +428,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
     if (!recordedBlob || !onApply) return;
 
     setIsApplying(true);
-    setApplyStatus('Procesando grabación...');
+    setApplyStatus(t('processingRecording', 'Processing recording...'));
 
     try {
       // Convert webm to WAV using AudioContext decode + manual WAV encode
@@ -443,30 +438,30 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
 
       // Encode to WAV
       const wavBlob = audioBufferToWav(audioBuffer);
-      audioCtx.close().catch(() => {});
+      audioCtx.close().catch(() => { });
 
-      setApplyStatus('Subiendo grabación...');
+      setApplyStatus(t('uploadingRecording', 'Uploading recording...'));
       await onApply({
         blob: wavBlob,
-        title: recordingTitle || 'Grabación de Voz',
+        title: recordingTitle || t('voiceRecording', 'Voice Recording'),
         mode,
         strength,
         lyrics: lyrics.trim(),
         audioCodes: extractedCodes || undefined,
       });
 
-      setApplyStatus('✅ ¡Grabación aplicada!');
+      setApplyStatus(`✅ ${t('recordingApplied', 'Recording applied!')}`);
       setTimeout(() => {
         setApplyStatus(null);
       }, 2000);
     } catch (err: any) {
       console.error('Apply recording error:', err);
-      setApplyStatus(`❌ Error: ${err?.message || 'fallo'}`);
+      setApplyStatus(`❌ ${t('error', 'Error')}: ${err?.message || t('failure', 'failure')}`);
       setTimeout(() => setApplyStatus(null), 4000);
     } finally {
       setIsApplying(false);
     }
-  }, [recordedBlob, onApply, recordingTitle, mode, strength, lyrics, extractedCodes]);
+  }, [recordedBlob, onApply, recordingTitle, mode, strength, lyrics, extractedCodes, t]);
 
   // ---------------------------------------------------------------------------
   // WAV encoder (16-bit PCM)
@@ -545,9 +540,9 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
               <Mic size={16} className="text-red-400" />
             </div>
             <div>
-              <h2 className="text-[14px] font-bold text-white">Grabar Voz</h2>
+              <h2 className="text-[14px] font-bold text-white">{t('recordVoice', 'Record Voice')}</h2>
               <p className="text-[10px] text-zinc-500">
-                Graba y usa como referencia o vocal para la generación
+                {t('recordVoiceSubtitle', 'Record and use as reference or vocal for generation')}
               </p>
             </div>
           </div>
@@ -565,21 +560,21 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
           <div className="w-[300px] flex-shrink-0 border-r border-zinc-700/30 flex flex-col">
             <div className="px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-900/80 flex items-center gap-2 flex-shrink-0">
               <FileText size={13} className="text-zinc-500" />
-              <span className="text-[11px] font-semibold text-zinc-300">Letra</span>
+              <span className="text-[11px] font-semibold text-zinc-300">{t('lyrics', 'Lyrics')}</span>
               <span className="text-[9px] text-zinc-600 ml-auto">
-                {lyrics.split('\n').filter(l => l.trim()).length} líneas
+                {t('linesCount', { count: lyrics.split('\n').filter(l => l.trim()).length, defaultValue: '{{count}} lines' })}
               </span>
             </div>
             <textarea
               value={lyrics}
               onChange={(e) => setLyrics(e.target.value)}
-              placeholder={'[Verse]\nEscribe la letra aquí...\n\n[Chorus]\nEl estribillo va aquí...\n\nMientras grabas, puedes leer la letra\ny al aplicar se inyectará en el panel.'}
+              placeholder={t('lyricsMicPlaceholder', '[Verse]\nWrite lyrics here...\n\n[Chorus]\nThe chorus goes here...\n\nWhile recording, you can read the lyrics\nand it will be injected into the panel when applying.')}
               className="flex-1 w-full bg-transparent text-[11px] text-zinc-300 px-4 py-3 resize-none outline-none scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent font-mono leading-relaxed placeholder:text-zinc-700"
               spellCheck={false}
             />
             <div className="px-4 py-1.5 border-t border-zinc-800/40 flex-shrink-0">
               <p className="text-[8px] text-zinc-600 leading-tight">
-                Tip: Usa [Verse], [Chorus], [Bridge] para estructurar. Al aplicar, esta letra reemplazará la del panel de creación.
+                {t('recordTip', 'Tip: Use [Verse], [Chorus], [Bridge] to structure. When applying, this will replace the create panel lyrics.')}
               </p>
             </div>
           </div>
@@ -587,283 +582,284 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
           {/* RIGHT: Recorder + settings */}
           <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
             <div className="p-5 space-y-4">
-          {/* Waveform canvas */}
-          <div className="relative rounded-xl overflow-hidden bg-zinc-950 border border-zinc-800/60">
-            <canvas
-              ref={canvasRef}
-              width={420}
-              height={80}
-              className="w-full h-20"
-            />
-            {/* Recording indicator */}
-            {isRecording && (
-              <div className="absolute top-2 right-2 flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[10px] text-red-400 font-mono font-bold">
-                  REC {formatTime(recordingDuration)}
-                </span>
-              </div>
-            )}
-            {/* Idle state */}
-            {!isRecording && !recordedBlob && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[11px] text-zinc-600">
-                  {hasPermission === false
-                    ? '⚠️ Acceso al micrófono denegado'
-                    : 'Presiona grabar para comenzar'}
-                </span>
-              </div>
-            )}
-            {/* Recorded state */}
-            {!isRecording && recordedBlob && (
-              <div className="absolute inset-0 flex items-center justify-center gap-3">
-                <Waves size={14} className="text-indigo-400" />
-                <span className="text-[11px] text-zinc-400 font-mono">
-                  {formatTime(recordingDuration)} · {fileSizeKb} KB
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Recording controls */}
-          <div className="flex items-center justify-center gap-3">
-            {!isRecording && !recordedBlob && (
-              <button
-                onClick={startRecording}
-                className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-medium text-[12px] transition-colors shadow-lg shadow-red-600/20"
-              >
-                <Mic size={14} />
-                Grabar
-              </button>
-            )}
-
-            {isRecording && (
-              <button
-                onClick={stopRecording}
-                className="flex items-center gap-2 px-5 py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl font-medium text-[12px] transition-colors animate-pulse"
-              >
-                <Square size={14} />
-                Detener ({formatTime(recordingDuration)})
-              </button>
-            )}
-
-            {!isRecording && recordedBlob && (
-              <>
-                <button
-                  onClick={togglePlayback}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-medium text-[11px] transition-colors ${
-                    isPlaying
-                      ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700/40'
-                  }`}
-                >
-                  {isPlaying ? <Pause size={12} /> : <Play size={12} />}
-                  {isPlaying ? formatTime(playbackTime) : 'Escuchar'}
-                </button>
-
-                <button
-                  onClick={() => { setUploadedUrl(null); setIsProcessed(false); setExtractedCodes(null); startRecording(); }}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-red-600/20 text-red-400 border border-red-500/30 rounded-xl font-medium text-[11px] hover:bg-red-600/30 transition-colors"
-                >
-                  <Mic size={12} />
-                  Re-grabar
-                </button>
-
-                <button
-                  onClick={deleteRecording}
-                  className="p-2 text-zinc-500 hover:text-red-400 rounded-lg hover:bg-zinc-800 transition-colors"
-                  title="Eliminar grabación"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Step 2: Process + Whisper buttons (after recording) */}
-          {!isRecording && recordedBlob && !isProcessed && (
-            <div className="space-y-3">
-              {/* Whisper model selector */}
-              {whisperAvailable && whisperModels.length > 0 && (
-                <div className="relative">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Languages size={12} className="text-emerald-400" />
-                    <span className="text-[10px] font-medium text-zinc-400">Modelo Whisper:</span>
-                  </div>
-                  <button
-                    onClick={() => setShowModelDropdown(!showModelDropdown)}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-zinc-800/80 border border-zinc-700/40 rounded-lg text-[11px] text-zinc-300 hover:border-zinc-600 transition-colors"
-                  >
-                    <span className="flex items-center gap-2">
-                      {whisperModels.find(m => m.name === selectedWhisperModel)?.downloaded
-                        ? <Check size={10} className="text-emerald-400" />
-                        : <Download size={10} className="text-amber-400" />
-                      }
-                      {selectedWhisperModel} ({whisperModels.find(m => m.name === selectedWhisperModel)?.size || '?'})
+              {/* Waveform canvas */}
+              <div className="relative rounded-xl overflow-hidden bg-zinc-950 border border-zinc-800/60">
+                <canvas
+                  ref={canvasRef}
+                  width={420}
+                  height={80}
+                  className="w-full h-20"
+                />
+                {/* Recording indicator */}
+                {isRecording && (
+                  <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                    <span className="text-[10px] text-red-400 font-mono font-bold">
+                      REC {formatTime(recordingDuration)}
                     </span>
-                    <ChevronDown size={12} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
+                  </div>
+                )}
+                {/* Idle state */}
+                {!isRecording && !recordedBlob && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[11px] text-zinc-600">
+                      {hasPermission === false
+                        ? `⚠️ ${t('micAccessDenied', 'Microphone access denied')}`
+                        : t('pressToRecord', 'Press record to start')}
+                    </span>
+                  </div>
+                )}
+                {/* Recorded state */}
+                {!isRecording && recordedBlob && (
+                  <div className="absolute inset-0 flex items-center justify-center gap-3">
+                    <Waves size={14} className="text-indigo-400" />
+                    <span className="text-[11px] text-zinc-400 font-mono">
+                      {formatTime(recordingDuration)} · {fileSizeKb} KB
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Recording controls */}
+              <div className="flex items-center justify-center gap-3">
+                {!isRecording && !recordedBlob && (
+                  <button
+                    onClick={startRecording}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-medium text-[12px] transition-colors shadow-lg shadow-red-600/20"
+                  >
+                    <Mic size={14} />
+                    {t('record', 'Record')}
                   </button>
-                  {showModelDropdown && (
-                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700/60 rounded-lg shadow-xl overflow-hidden">
-                      {whisperModels.map(m => (
-                        <button
-                          key={m.name}
-                          onClick={() => { setSelectedWhisperModel(m.name); setShowModelDropdown(false); }}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-[11px] hover:bg-zinc-700/60 transition-colors ${
-                            m.name === selectedWhisperModel ? 'bg-zinc-700/40 text-white' : 'text-zinc-300'
-                          }`}
-                        >
-                          <span className="flex items-center gap-2">
-                            {m.downloaded
-                              ? <Check size={10} className="text-emerald-400" />
-                              : <Download size={10} className="text-zinc-600" />
-                            }
-                            <span className="font-medium">{m.name}</span>
-                            <span className="text-zinc-500">{m.size}</span>
-                          </span>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded ${
-                            m.downloaded
-                              ? 'bg-emerald-600/20 text-emerald-400'
-                              : 'bg-zinc-700 text-zinc-500'
-                          }`}>
-                            {m.downloaded ? 'descargado' : 'no descargado'}
-                          </span>
-                        </button>
-                      ))}
+                )}
+
+                {isRecording && (
+                  <button
+                    onClick={stopRecording}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl font-medium text-[12px] transition-colors animate-pulse"
+                  >
+                    <Square size={14} />
+                    {t('stop', 'Stop')} ({formatTime(recordingDuration)})
+                  </button>
+                )}
+
+                {!isRecording && recordedBlob && (
+                  <>
+                    <button
+                      onClick={togglePlayback}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-medium text-[11px] transition-colors ${isPlaying
+                          ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                          : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700/40'
+                        }`}
+                    >
+                      {isPlaying ? <Pause size={12} /> : <Play size={12} />}
+                      {isPlaying ? formatTime(playbackTime) : t('listen', 'Listen')}
+                    </button>
+
+                    <button
+                      onClick={() => { setUploadedUrl(null); setIsProcessed(false); setExtractedCodes(null); startRecording(); }}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-red-600/20 text-red-400 border border-red-500/30 rounded-xl font-medium text-[11px] hover:bg-red-600/30 transition-colors"
+                    >
+                      <Mic size={12} />
+                      {t('reRecord', 'Re-record')}
+                    </button>
+
+                    <button
+                      onClick={deleteRecording}
+                      className="p-2 text-zinc-500 hover:text-red-400 rounded-lg hover:bg-zinc-800 transition-colors"
+                      title={t('deleteRecording', 'Delete recording')}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Step 2: Process + Whisper buttons (after recording) */}
+              {!isRecording && recordedBlob && !isProcessed && (
+                <div className="space-y-3">
+                  {/* Whisper model selector */}
+                  {whisperAvailable && whisperModels.length > 0 && (
+                    <div className="relative">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Languages size={12} className="text-emerald-400" />
+                        <span className="text-[10px] font-medium text-zinc-400">{t('whisperModel', 'Whisper Model:')}</span>
+                      </div>
+                      <button
+                        onClick={() => setShowModelDropdown(!showModelDropdown)}
+                        className="w-full flex items-center justify-between px-3 py-2 bg-zinc-800/80 border border-zinc-700/40 rounded-lg text-[11px] text-zinc-300 hover:border-zinc-600 transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          {whisperModels.find(m => m.name === selectedWhisperModel)?.downloaded
+                            ? <Check size={10} className="text-emerald-400" />
+                            : <Download size={10} className="text-amber-400" />
+                          }
+                          {selectedWhisperModel} ({whisperModels.find(m => m.name === selectedWhisperModel)?.size || '?'})
+                        </span>
+                        <ChevronDown size={12} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
+                      </button>
+                      {showModelDropdown && (
+                        <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700/60 rounded-lg shadow-xl overflow-hidden">
+                          {whisperModels.map(m => (
+                            <button
+                              key={m.name}
+                              onClick={() => { setSelectedWhisperModel(m.name); setShowModelDropdown(false); }}
+                              className={`w-full flex items-center justify-between px-3 py-2 text-[11px] hover:bg-zinc-700/60 transition-colors ${m.name === selectedWhisperModel ? 'bg-zinc-700/40 text-white' : 'text-zinc-300'
+                                }`}
+                            >
+                              <span className="flex items-center gap-2">
+                                {m.downloaded
+                                  ? <Check size={10} className="text-emerald-400" />
+                                  : <Download size={10} className="text-zinc-600" />
+                                }
+                                <span className="font-medium">{m.name}</span>
+                                <span className="text-zinc-500">{m.size}</span>
+                              </span>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded ${m.downloaded
+                                  ? 'bg-emerald-600/20 text-emerald-400'
+                                  : 'bg-zinc-700 text-zinc-500'
+                                }`}>
+                                {m.downloaded ? t('downloaded', 'downloaded') : t('notDownloaded', 'not downloaded')}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleProcess(true)}
+                      disabled={isProcessing || isTranscribing}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-[11px] transition-all border ${isProcessing || isTranscribing
+                          ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20 animate-pulse cursor-wait'
+                          : 'bg-gradient-to-r from-emerald-600/20 to-cyan-600/20 text-emerald-300 border-emerald-500/30 hover:from-emerald-600/30 hover:to-cyan-600/30 hover:border-emerald-500/50'
+                        }`}
+                      title={t('processWhisperTooltip', 'Upload, extract semantic codes and transcribe with Whisper')}
+                    >
+                      <Cpu size={13} />
+                      {isProcessing && !isTranscribing ? t('processing', 'Processing...') : isTranscribing ? t('transcribing', 'Transcribing...') : t('processWhisper', 'Process + Whisper')}
+                    </button>
+
+                    <button
+                      onClick={() => handleProcess(false)}
+                      disabled={isProcessing || isTranscribing}
+                      className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-[11px] transition-all border ${isProcessing
+                          ? 'bg-zinc-700/50 text-zinc-400 border-zinc-600/30 animate-pulse cursor-wait'
+                          : 'bg-zinc-800/80 text-zinc-300 border-zinc-700/40 hover:bg-zinc-700/60 hover:border-zinc-600'
+                        }`}
+                      title={t('onlyProcessTooltip', 'Only upload and extract semantic codes (no transcription)')}
+                    >
+                      <Cpu size={13} />
+                      {isProcessing ? t('processing', 'Processing...') : t('onlyProcess', 'Only Process')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Processed indicator */}
+              {isProcessed && !isRecording && recordedBlob && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-600/10 border border-emerald-500/20 rounded-xl">
+                  <Check size={13} className="text-emerald-400" />
+                  <span className="text-[10px] text-emerald-300 font-medium">{t('audioProcessed', 'Audio processed')}</span>
+                  {extractedCodes && (
+                    <span className="text-[9px] text-emerald-500 ml-auto">
+                      {t('semanticCodesCount', { count: extractedCodes.split(' ').length, defaultValue: '{{count}} semantic codes' })}
+                    </span>
                   )}
                 </div>
               )}
 
-              {/* Action buttons */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleProcess(true)}
-                  disabled={isProcessing || isTranscribing}
-                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-[11px] transition-all border ${
-                    isProcessing || isTranscribing
-                      ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20 animate-pulse cursor-wait'
-                      : 'bg-gradient-to-r from-emerald-600/20 to-cyan-600/20 text-emerald-300 border-emerald-500/30 hover:from-emerald-600/30 hover:to-cyan-600/30 hover:border-emerald-500/50'
-                  }`}
-                  title="Sube, extrae códigos semánticos y transcribe con Whisper"
-                >
-                  <Cpu size={13} />
-                  {isProcessing && !isTranscribing ? 'Procesando...' : isTranscribing ? 'Transcribiendo...' : 'Procesar + Whisper'}
-                </button>
+              {/* Title input */}
+              {recordedBlob && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-zinc-500 font-medium w-12">{t('titleLabel', 'Title:')}</span>
+                    <input
+                      type="text"
+                      value={recordingTitle}
+                      onChange={(e) => setRecordingTitle(e.target.value)}
+                      className="flex-1 bg-zinc-800 text-[11px] text-white border border-zinc-700/40 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500/50"
+                      placeholder={t('recordingTitlePlaceholder', 'Recording name...')}
+                    />
+                  </div>
 
-                <button
-                  onClick={() => handleProcess(false)}
-                  disabled={isProcessing || isTranscribing}
-                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-[11px] transition-all border ${
-                    isProcessing
-                      ? 'bg-zinc-700/50 text-zinc-400 border-zinc-600/30 animate-pulse cursor-wait'
-                      : 'bg-zinc-800/80 text-zinc-300 border-zinc-700/40 hover:bg-zinc-700/60 hover:border-zinc-600'
-                  }`}
-                  title="Solo sube y extrae códigos semánticos (sin transcripción)"
-                >
-                  <Cpu size={13} />
-                  {isProcessing ? 'Procesando...' : 'Solo Procesar'}
-                </button>
-              </div>
-            </div>
-          )}
+                  {/* Mode selector */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] text-zinc-500 font-medium">{t('useAsLabel', 'Use as:')}</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setMode('reference')}
+                        className={`p-3 rounded-xl border-2 transition-all text-left ${mode === 'reference'
+                            ? 'border-indigo-500 bg-indigo-600/10'
+                            : 'border-zinc-700/40 bg-zinc-800/50 hover:border-zinc-600'
+                          }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Music size={13} className={mode === 'reference' ? 'text-indigo-400' : 'text-zinc-500'} />
+                          <span className={`text-[11px] font-bold ${mode === 'reference' ? 'text-indigo-300' : 'text-zinc-300'}`}>
+                            {t('referenceAudio', 'Reference Audio')}
+                          </span>
+                        </div>
+                        <p className="text-[9px] text-zinc-500 leading-tight">
+                          {t('referenceAudioDesc', 'Model generates music inspired by your recording (melody, rhythm, tone)')}
+                        </p>
+                      </button>
 
-          {/* Processed indicator */}
-          {isProcessed && !isRecording && recordedBlob && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-600/10 border border-emerald-500/20 rounded-xl">
-              <Check size={13} className="text-emerald-400" />
-              <span className="text-[10px] text-emerald-300 font-medium">Audio procesado</span>
-              {extractedCodes && (
-                <span className="text-[9px] text-emerald-500 ml-auto">
-                  {extractedCodes.split(' ').length} códigos semánticos
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Title input */}
-          {recordedBlob && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-zinc-500 font-medium w-12">Título:</span>
-                <input
-                  type="text"
-                  value={recordingTitle}
-                  onChange={(e) => setRecordingTitle(e.target.value)}
-                  className="flex-1 bg-zinc-800 text-[11px] text-white border border-zinc-700/40 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500/50"
-                  placeholder="Nombre de la grabación..."
-                />
-              </div>
-
-              {/* Mode selector */}
-              <div className="space-y-1.5">
-                <span className="text-[10px] text-zinc-500 font-medium">Usar como:</span>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setMode('reference')}
-                    className={`p-3 rounded-xl border-2 transition-all text-left ${
-                      mode === 'reference'
-                        ? 'border-indigo-500 bg-indigo-600/10'
-                        : 'border-zinc-700/40 bg-zinc-800/50 hover:border-zinc-600'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <Music size={13} className={mode === 'reference' ? 'text-indigo-400' : 'text-zinc-500'} />
-                      <span className={`text-[11px] font-bold ${mode === 'reference' ? 'text-indigo-300' : 'text-zinc-300'}`}>
-                        Audio Referencia
-                      </span>
+                      <button
+                        onClick={() => setMode('cover')}
+                        className={`p-3 rounded-xl border-2 transition-all text-left ${mode === 'cover'
+                            ? 'border-orange-500 bg-orange-600/10'
+                            : 'border-zinc-700/40 bg-zinc-800/50 hover:border-zinc-600'
+                          }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Mic size={13} className={mode === 'cover' ? 'text-orange-400' : 'text-zinc-500'} />
+                          <span className={`text-[11px] font-bold ${mode === 'cover' ? 'text-orange-300' : 'text-zinc-300'}`}>
+                            {t('vocalCover', 'Vocal / Cover')}
+                          </span>
+                        </div>
+                        <p className="text-[9px] text-zinc-500 leading-tight">
+                          {t('vocalCoverDesc', 'Generates music that follows your voice as the main vocal guide')}
+                        </p>
+                      </button>
                     </div>
-                    <p className="text-[9px] text-zinc-500 leading-tight">
-                      El modelo genera música inspirada en tu grabación (melodía, ritmo, tono)
-                    </p>
-                  </button>
+                  </div>
 
-                  <button
-                    onClick={() => setMode('cover')}
-                    className={`p-3 rounded-xl border-2 transition-all text-left ${
-                      mode === 'cover'
-                        ? 'border-orange-500 bg-orange-600/10'
-                        : 'border-zinc-700/40 bg-zinc-800/50 hover:border-zinc-600'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <Mic size={13} className={mode === 'cover' ? 'text-orange-400' : 'text-zinc-500'} />
-                      <span className={`text-[11px] font-bold ${mode === 'cover' ? 'text-orange-300' : 'text-zinc-300'}`}>
-                        Vocal / Cover
-                      </span>
-                    </div>
-                    <p className="text-[9px] text-zinc-500 leading-tight">
-                      Genera música que sigue tu voz como guía vocal principal
-                    </p>
-                  </button>
+                  {/* Strength slider */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-zinc-500 font-medium w-12">{t('strengthLabel', 'Strength:')}</span>
+                    <input
+                      type="range"
+                      min={0.1}
+                      max={1.0}
+                      step={0.05}
+                      value={strength}
+                      onChange={(e) => setStrength(parseFloat(e.target.value))}
+                      className={`flex-1 h-1 ${mode === 'reference' ? 'accent-indigo-500' : 'accent-orange-500'}`}
+                    />
+                    <span className="text-[10px] text-zinc-400 font-mono w-8 text-right">
+                      {Math.round(strength * 100)}%
+                    </span>
+                  </div>
+
+                  <p className="text-[9px] text-zinc-600 leading-tight">
+                    {mode === 'reference'
+                      ? t('strengthRefDesc', {
+                        strength: Math.round(strength * 100),
+                        level: strength < 0.4 ? t('subtleInspiration', 'subtle inspiration') : strength < 0.7 ? t('followStructure', 'follow structure') : t('faithfullyCopy', 'faithfully copy'),
+                        defaultValue: 'Strength {{strength}}%: {{level}} the recording.'
+                      })
+                      : t('strengthVocalDesc', {
+                        strength: Math.round(strength * 100),
+                        level: strength < 0.4 ? t('vagueVocal', 'vague vocal') : strength < 0.7 ? t('followVoice', 'follow your voice') : t('replicateVoice', 'replicate your voice closely'),
+                        defaultValue: 'Strength {{strength}}%: {{level}}.'
+                      })
+                    }
+                  </p>
                 </div>
-              </div>
-
-              {/* Strength slider */}
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] text-zinc-500 font-medium w-12">Fuerza:</span>
-                <input
-                  type="range"
-                  min={0.1}
-                  max={1.0}
-                  step={0.05}
-                  value={strength}
-                  onChange={(e) => setStrength(parseFloat(e.target.value))}
-                  className={`flex-1 h-1 ${mode === 'reference' ? 'accent-indigo-500' : 'accent-orange-500'}`}
-                />
-                <span className="text-[10px] text-zinc-400 font-mono w-8 text-right">
-                  {Math.round(strength * 100)}%
-                </span>
-              </div>
-
-              <p className="text-[9px] text-zinc-600 leading-tight">
-                {mode === 'reference'
-                  ? `Fuerza ${Math.round(strength * 100)}%: ${strength < 0.4 ? 'sutil inspiración' : strength < 0.7 ? 'sigue la estructura' : 'copia fielmente'} la grabación.`
-                  : `Fuerza ${Math.round(strength * 100)}%: ${strength < 0.4 ? 'vocal vaga' : strength < 0.7 ? 'sigue tu voz' : 'replica tu voz muy de cerca'}.`
-                }
-              </p>
-            </div>
-          )}
+              )}
             </div>
           </div>
         </div>
@@ -872,11 +868,10 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
         <div className="border-t border-zinc-700/30 px-5 py-3 bg-zinc-900/90 flex-shrink-0">
           <div className="flex items-center gap-3">
             {applyStatus && (
-              <span className={`text-[10px] font-medium animate-in fade-in duration-200 ${
-                applyStatus.startsWith('✅') ? 'text-green-400' :
-                applyStatus.startsWith('❌') ? 'text-red-400' :
-                'text-zinc-400'
-              }`}>
+              <span className={`text-[10px] font-medium animate-in fade-in duration-200 ${applyStatus.startsWith('✅') ? 'text-green-400' :
+                  applyStatus.startsWith('❌') ? 'text-red-400' :
+                    'text-zinc-400'
+                }`}>
                 {isApplying && !applyStatus.startsWith('✅') && !applyStatus.startsWith('❌') && (
                   <span className="inline-block w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />
                 )}
@@ -887,16 +882,15 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
             <button
               onClick={handleApply}
               disabled={!recordedBlob || isApplying || isRecording}
-              className={`flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium rounded-lg transition-all ${
-                recordedBlob && !isApplying
+              className={`flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium rounded-lg transition-all ${recordedBlob && !isApplying
                   ? mode === 'reference'
                     ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white'
                     : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white'
                   : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-              }`}
+                }`}
             >
               <Upload size={12} />
-              {mode === 'reference' ? 'Usar como Referencia' : 'Usar como Vocal'}
+              {mode === 'reference' ? t('useAsReference', 'Use as Reference') : t('useAsVocal', 'Use as Vocal')}
             </button>
           </div>
         </div>
