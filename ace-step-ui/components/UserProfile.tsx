@@ -187,7 +187,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ username, onBack, onPl
         'from-blue-600 via-purple-600 to-pink-600',
         'from-green-600 via-teal-600 to-blue-600',
         'from-orange-600 via-red-600 to-pink-600',
-        'from-indigo-600 via-purple-600 to-pink-600',
+        'from-violet-600 via-purple-600 to-pink-600',
     ];
     const bannerGradient = gradients[username.length % gradients.length];
     const primaryBadge = profileUser.badges?.[0];
@@ -212,9 +212,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ username, onBack, onPl
     const paidNameStyle = primaryBadge?.color === 'yellow'
         ? 'bg-gradient-to-r from-yellow-300 via-amber-300 to-orange-400 text-transparent bg-clip-text drop-shadow-[0_2px_12px_rgba(251,191,36,0.45)]'
         : primaryBadge?.color === 'purple'
-        ? 'bg-gradient-to-r from-fuchsia-400 via-purple-500 to-indigo-400 text-transparent bg-clip-text drop-shadow-[0_2px_12px_rgba(168,85,247,0.45)]'
+        ? 'bg-gradient-to-r from-fuchsia-400 via-purple-500 to-violet-400 text-transparent bg-clip-text drop-shadow-[0_2px_12px_rgba(168,85,247,0.45)]'
         : primaryBadge?.color === 'blue'
-        ? 'bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-400 text-transparent bg-clip-text drop-shadow-[0_2px_12px_rgba(59,130,246,0.45)]'
+        ? 'bg-gradient-to-r from-sky-400 via-blue-500 to-violet-400 text-transparent bg-clip-text drop-shadow-[0_2px_12px_rgba(59,130,246,0.45)]'
         : primaryBadge?.color === 'teal'
         ? 'bg-gradient-to-r from-teal-300 via-emerald-400 to-cyan-400 text-transparent bg-clip-text drop-shadow-[0_2px_12px_rgba(45,212,191,0.45)]'
         : primaryBadge?.color === 'orange'
@@ -310,9 +310,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ username, onBack, onPl
                                                     badge.color === 'yellow'
                                                         ? 'from-yellow-300 via-amber-300 to-orange-400 text-amber-950 shadow-[0_0_20px_rgba(251,191,36,0.45)]'
                                                         : badge.color === 'purple'
-                                                        ? 'from-fuchsia-400 via-purple-500 to-indigo-500 text-white shadow-[0_0_20px_rgba(168,85,247,0.45)]'
+                                                        ? 'from-fuchsia-400 via-purple-500 to-violet-500 text-white shadow-[0_0_20px_rgba(168,85,247,0.45)]'
                                                         : badge.color === 'blue'
-                                                        ? 'from-sky-400 via-blue-500 to-indigo-500 text-white shadow-[0_0_18px_rgba(59,130,246,0.45)]'
+                                                        ? 'from-sky-400 via-blue-500 to-violet-500 text-white shadow-[0_0_18px_rgba(59,130,246,0.45)]'
                                                         : badge.color === 'teal'
                                                         ? 'from-teal-300 via-emerald-400 to-cyan-400 text-emerald-950 shadow-[0_0_18px_rgba(45,212,191,0.45)]'
                                                         : badge.color === 'orange'
@@ -577,7 +577,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ username, onBack, onPl
                                     onClick={() => onNavigateToPlaylist?.(playlist.id)}
                                     className="group relative flex-shrink-0 w-36 md:w-48 cursor-pointer"
                                 >
-                                    <div className="aspect-square rounded-lg bg-gradient-to-br from-indigo-600 to-purple-700 mb-2 md:mb-3 flex items-center justify-center relative overflow-hidden">
+                                    <div className="aspect-square rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 mb-2 md:mb-3 flex items-center justify-center relative overflow-hidden">
                                         <MusicIcon size={48} className="text-white/30 md:w-16 md:h-16" />
                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white flex items-center justify-center">
@@ -692,7 +692,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ username, onBack, onPl
                                     onChange={(e) => setEditBio(e.target.value)}
                                     placeholder={t('bioPlaceholder')}
                                     rows={4}
-                                    className="w-full bg-zinc-50 dark:bg-black border border-zinc-300 dark:border-zinc-800 rounded-lg px-3 py-2 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-pink-500 dark:focus:border-indigo-500 transition-colors resize-none"
+                                    className="w-full bg-zinc-50 dark:bg-black border border-zinc-300 dark:border-zinc-800 rounded-lg px-3 py-2 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-pink-500 dark:focus:border-violet-500 transition-colors resize-none"
                                 />
                             </div>
                         </div>

@@ -5173,7 +5173,7 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
                     title: 'Audio Codes (Códigos Semánticos)',
                     content: `<p class="mb-1.5">Tokens semánticos a 5Hz que codifican la <span class="text-amber-300">melodía, ritmo y estructura</span> del audio. Cuando están presentes:</p><ul class="list-disc list-inside space-y-0.5 text-zinc-400"><li><span class="text-emerald-300">task_type</span> cambia automáticamente a <span class="text-orange-300">cover</span></li><li>El modelo sigue la estructura melódica de los códigos</li><li><span class="text-emerald-300">source audio</span> se ignora cuando hay códigos</li><li><span class="text-emerald-300">audio_cover_strength</span> controla la adherencia</li></ul><p class="mt-1.5 text-zinc-500">Usa "Convert to Codes" para extraer de un audio, o el Grabador de Voz que los extrae automáticamente.</p>`
                   })}
-                  className="text-zinc-500 hover:text-indigo-400 transition-colors"
+                  className="text-zinc-500 hover:text-violet-400 transition-colors"
                   title="Ver info sobre Audio Codes"
                 >
                   <Info size={12} />
@@ -6339,7 +6339,7 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
               className={`h-12 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 transition-[filter] duration-150 transform active:scale-[0.98] shadow-lg hover:brightness-110 ${
                 activeJobCount >= maxConcurrentJobs
                   ? 'bg-zinc-400 dark:bg-zinc-600 text-white/70 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-violet-500 to-indigo-600 text-white'
+                  : 'bg-gradient-to-r from-violet-500 to-violet-600 text-white'
               }`}
               disabled={activeJobCount >= maxConcurrentJobs || !isAuthenticated || isSeparating}
               title="Generate section by section (Suno-style): parses [Verse], [Chorus], etc. and generates each section sequentially for better structure alignment."

@@ -644,7 +644,7 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
           flex items-center justify-center transition-all duration-300
           ${isOpen 
             ? 'bg-zinc-700 hover:bg-zinc-600 rotate-0' 
-            : 'bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 animate-pulse hover:animate-none'
+            : 'bg-gradient-to-br from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 animate-pulse hover:animate-none'
           }
           text-white
         `}
@@ -717,7 +717,7 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
           <div className="flex-shrink-0 border-b border-zinc-700/50">
             <div className="flex items-center justify-between px-4 py-2.5">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center">
                   <Music size={16} className="text-white" />
                 </div>
                 <div>
@@ -808,7 +808,7 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
                 onClick={() => setActiveTab('chords')}
                 className={`flex-1 py-2 text-xs font-medium border-b-2 transition-colors ${
                   activeTab === 'chords' 
-                    ? 'border-indigo-500 text-indigo-400' 
+                    ? 'border-violet-500 text-violet-400' 
                     : 'border-transparent text-zinc-500 hover:text-zinc-300'
                 }`}
               >
@@ -891,12 +891,12 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
                       <div key={msg.id} className="flex justify-start">
                         <div className="w-[92%] rounded-2xl overflow-hidden border border-zinc-700/20 bg-gradient-to-b from-zinc-800/90 to-zinc-900/90 shadow-lg">
                           {/* Song header with cover art placeholder */}
-                          <div className="relative px-4 py-3 bg-gradient-to-r from-purple-900/30 via-indigo-900/20 to-zinc-900/10">
+                          <div className="relative px-4 py-3 bg-gradient-to-r from-purple-900/30 via-violet-900/20 to-zinc-900/10">
                             <div className="flex items-center gap-3">
                               {/* Album art / play button combined */}
                               <button
                                 onClick={() => handlePlayInChat(song)}
-                                className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 flex items-center justify-center flex-shrink-0 transition-all shadow-lg shadow-purple-900/30 group"
+                                className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 flex items-center justify-center flex-shrink-0 transition-all shadow-lg shadow-purple-900/30 group"
                               >
                                 {isThisPlaying
                                   ? <Pause size={18} className="text-white" />
@@ -924,7 +924,7 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
                                 onClick={(e) => { if (isCurrent) handleProgressClick(e); else handlePlayInChat(song); }}
                               >
                                 <div
-                                  className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-400 rounded-full transition-all duration-200 relative"
+                                  className="h-full bg-gradient-to-r from-purple-500 via-violet-500 to-purple-400 rounded-full transition-all duration-200 relative"
                                   style={{ width: `${progress}%` }}
                                 >
                                   {isCurrent && (
@@ -1109,7 +1109,7 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
                             </button>
                             <button
                               onClick={() => handleGenerateNow(msg.parsedParams!)}
-                              className="flex-1 py-1.5 px-3 text-[11px] font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg transition-colors flex items-center justify-center gap-1"
+                              className="flex-1 py-1.5 px-3 text-[11px] font-medium bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white rounded-lg transition-colors flex items-center justify-center gap-1"
                             >
                               <Zap size={12} />
                               ¡Generar!
@@ -1135,7 +1135,7 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
 
                 {isGenerating && !isLoading && (
                   <div className="flex justify-start">
-                    <div className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-2xl rounded-bl-md px-4 py-3 border border-purple-500/20">
+                    <div className="bg-gradient-to-r from-purple-900/30 to-violet-900/30 rounded-2xl rounded-bl-md px-4 py-3 border border-purple-500/20">
                       <div className="flex items-center gap-2">
                         <Disc3 size={14} className="animate-spin text-purple-400" />
                         <span className="text-purple-300 text-[12px] animate-pulse font-medium">🔥 Generando tu track... ¡Esto va a sonar brutal!</span>
@@ -1190,7 +1190,7 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
                   </button>
                   <button
                     onClick={() => setActiveTab('chords')}
-                    className={`flex items-center gap-1 px-2 py-1 text-[9px] font-medium rounded-md transition-colors ${activeTab === 'chords' ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-zinc-800 text-zinc-400 hover:text-indigo-400 hover:bg-zinc-700 border border-zinc-700/30'}`}
+                    className={`flex items-center gap-1 px-2 py-1 text-[9px] font-medium rounded-md transition-colors ${activeTab === 'chords' ? 'bg-violet-600/20 text-violet-400 border border-violet-500/30' : 'bg-zinc-800 text-zinc-400 hover:text-violet-400 hover:bg-zinc-700 border border-zinc-700/30'}`}
                   >
                     <Music size={9} />
                     Acordes

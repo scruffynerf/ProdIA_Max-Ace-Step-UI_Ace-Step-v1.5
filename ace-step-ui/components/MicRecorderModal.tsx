@@ -617,7 +617,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
             {/* Recorded state */}
             {!isRecording && recordedBlob && (
               <div className="absolute inset-0 flex items-center justify-center gap-3">
-                <Waves size={14} className="text-indigo-400" />
+                <Waves size={14} className="text-violet-400" />
                 <span className="text-[11px] text-zinc-400 font-mono">
                   {formatTime(recordingDuration)} · {fileSizeKb} KB
                 </span>
@@ -653,7 +653,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
                   onClick={togglePlayback}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-medium text-[11px] transition-colors ${
                     isPlaying
-                      ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                      ? 'bg-violet-600/20 text-violet-400 border border-violet-500/30'
                       : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700/40'
                   }`}
                 >
@@ -790,7 +790,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
                   type="text"
                   value={recordingTitle}
                   onChange={(e) => setRecordingTitle(e.target.value)}
-                  className="flex-1 bg-zinc-800 text-[11px] text-white border border-zinc-700/40 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500/50"
+                  className="flex-1 bg-zinc-800 text-[11px] text-white border border-zinc-700/40 rounded-lg px-3 py-1.5 outline-none focus:border-violet-500/50"
                   placeholder="Nombre de la grabación..."
                 />
               </div>
@@ -803,13 +803,13 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
                     onClick={() => setMode('reference')}
                     className={`p-3 rounded-xl border-2 transition-all text-left ${
                       mode === 'reference'
-                        ? 'border-indigo-500 bg-indigo-600/10'
+                        ? 'border-violet-500 bg-violet-600/10'
                         : 'border-zinc-700/40 bg-zinc-800/50 hover:border-zinc-600'
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <Music size={13} className={mode === 'reference' ? 'text-indigo-400' : 'text-zinc-500'} />
-                      <span className={`text-[11px] font-bold ${mode === 'reference' ? 'text-indigo-300' : 'text-zinc-300'}`}>
+                      <Music size={13} className={mode === 'reference' ? 'text-violet-400' : 'text-zinc-500'} />
+                      <span className={`text-[11px] font-bold ${mode === 'reference' ? 'text-violet-300' : 'text-zinc-300'}`}>
                         Audio Referencia
                       </span>
                     </div>
@@ -849,7 +849,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
                   step={0.05}
                   value={strength}
                   onChange={(e) => setStrength(parseFloat(e.target.value))}
-                  className={`flex-1 h-1 ${mode === 'reference' ? 'accent-indigo-500' : 'accent-orange-500'}`}
+                  className={`flex-1 h-1 ${mode === 'reference' ? 'accent-violet-500' : 'accent-orange-500'}`}
                 />
                 <span className="text-[10px] text-zinc-400 font-mono w-8 text-right">
                   {Math.round(strength * 100)}%
@@ -878,7 +878,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
                 'text-zinc-400'
               }`}>
                 {isApplying && !applyStatus.startsWith('✅') && !applyStatus.startsWith('❌') && (
-                  <span className="inline-block w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />
+                  <span className="inline-block w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />
                 )}
                 {applyStatus}
               </span>
@@ -890,7 +890,7 @@ export function MicRecorderModal({ isOpen, onClose, onApply, initialLyrics, toke
               className={`flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium rounded-lg transition-all ${
                 recordedBlob && !isApplying
                   ? mode === 'reference'
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white'
+                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white'
                     : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white'
                   : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
               }`}

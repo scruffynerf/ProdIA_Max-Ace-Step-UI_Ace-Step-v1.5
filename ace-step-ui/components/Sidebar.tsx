@@ -189,9 +189,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Info Panel — shown when an info icon is clicked in CreatePanel */}
         {isOpen && infoText && (
-          <div className="mx-1 mt-1 border border-indigo-500/30 bg-zinc-900/90 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="flex items-center justify-between px-3 py-1.5 bg-indigo-500/10 border-b border-indigo-500/20">
-              <span className="text-[11px] font-bold text-indigo-300 truncate">{infoText.title}</span>
+          <div className="mx-1 mt-1 border border-violet-500/30 bg-zinc-900/90 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-violet-500/10 border-b border-violet-500/20">
+              <span className="text-[11px] font-bold text-violet-300 truncate">{infoText.title}</span>
               <button
                 onClick={() => onDismissInfo?.()}
                 className="w-5 h-5 flex items-center justify-center rounded hover:bg-white/10 text-zinc-400 hover:text-white transition-colors flex-shrink-0"

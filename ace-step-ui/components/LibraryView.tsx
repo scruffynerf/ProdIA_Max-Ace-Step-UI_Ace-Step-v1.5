@@ -212,8 +212,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
              )}
              {activeTab === 'liked' && (
                  <div>
-                    <div className="bg-gradient-to-b from-indigo-500/10 to-zinc-50 dark:from-indigo-800/50 dark:to-zinc-900/50 p-6 rounded-xl flex items-end gap-6 mb-8 cursor-pointer hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors group border border-zinc-200 dark:border-white/5" onClick={() => likedSongs.length > 0 && onPlaySong(likedSongs[0], likedSongs)}>
-                         <div className="w-40 h-40 bg-gradient-to-br from-indigo-500 to-purple-400 rounded shadow-2xl flex items-center justify-center">
+                    <div className="bg-gradient-to-b from-violet-500/10 to-zinc-50 dark:from-violet-800/50 dark:to-zinc-900/50 p-6 rounded-xl flex items-end gap-6 mb-8 cursor-pointer hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors group border border-zinc-200 dark:border-white/5" onClick={() => likedSongs.length > 0 && onPlaySong(likedSongs[0], likedSongs)}>
+                         <div className="w-40 h-40 bg-gradient-to-br from-violet-500 to-purple-400 rounded shadow-2xl flex items-center justify-center">
                             <Heart fill="white" size={64} className="text-white" />
                          </div>
                          <div className="mb-2">
