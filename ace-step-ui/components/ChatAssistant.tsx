@@ -142,11 +142,15 @@ interface ChatAssistantProps {
 export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics, audioCodes, isGenerating, lastGeneratedSong, currentSong, isPlaying, currentTime = 0, duration = 0, onPlaySong, onTogglePlay, onSeek, songs }: ChatAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'codes' | 'chords'>('chat');
+  // Agent mode: 'agent' = AI applies changes directly, 'instructor' = AI only explains
+  const [agentMode, setAgentMode] = useState<'agent' | 'instructor'>(() => {
+    try { return (localStorage.getItem('prodiaChat_mode') as any) || 'agent'; } catch { return 'agent'; }
+  });
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
       role: 'system',
-      content: '🎶 ¡Ey! Soy tu asistente de producción musical de ProdIA Pro 😎\n\nCuéntame qué tienes en mente y te lo monto al momento — tengo control total sobre ACE-Step 🔥\n\nPrueba algo como:\n• "Hazme un reggaetón bien pegajoso a 95 bpm" 🎵\n• "Quiero una balada de rock en español que emocione" 🎸\n• "Sube la calidad al máximo" ✨\n• "¿Qué modelo me recomiendas?" 💡',
+      content: 'Asistente de producción musical — ProdIA Pro\n\nTengo control total sobre ACE-Step. Puedo configurar parámetros, generar música y ajustar cualquier aspecto de tu producción.\n\nEjemplos:\n• "Hazme un reggaetón a 95 bpm"\n• "Quiero una balada de rock en español"\n• "Sube la calidad al máximo"\n• "¿Qué modelo me recomiendas?"',
       timestamp: new Date(),
     }
   ]);
@@ -229,6 +233,11 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
     try { localStorage.setItem('prodiaChat_lang', chatLang); } catch {}
   }, [chatLang]);
 
+  // Persist agent mode
+  useEffect(() => {
+    try { localStorage.setItem('prodiaChat_mode', agentMode); } catch {}
+  }, [agentMode]);
+
   // Persist chat size
   useEffect(() => {
     try { localStorage.setItem('prodiaChat_size', JSON.stringify(chatSize)); } catch {}
@@ -271,10 +280,10 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
   // Clear chat
   const clearChat = () => {
     const welcomeMsg = chatLang === 'en'
-      ? '🎶 Hey! I\'m your music production assistant from ProdIA Pro 😎\n\nTell me what you have in mind and I\'ll set it all up — I have full control over ACE-Step 🔥\n\nTry something like:\n• "Make me a catchy reggaeton at 95 bpm" 🎵\n• "I want an emotional rock ballad" 🎸\n• "Max out the quality" ✨\n• "Which model do you recommend?" 💡'
+      ? 'Music production assistant — ProdIA Pro\n\nI have full control over ACE-Step. I can configure parameters, generate music, and adjust any aspect of your production.\n\nExamples:\n• "Make me a reggaeton at 95 bpm"\n• "I want an emotional rock ballad"\n• "Max out the quality"\n• "Which model do you recommend?"'
       : chatLang === 'zh'
-        ? '🎶 嘿！我是ProdIA Pro的音乐制作助手 😎\n\n告诉我你的想法，我来帮你搞定一切 — 我可以完全控制ACE-Step 🔥\n\n试试这样说：\n• "帮我做一首95 bpm的雷鬼" 🎵\n• "我想要一首感人的摇滚民谣" 🎸\n• "把质量调到最高" ✨\n• "你推荐哪个模型？" 💡'
-        : '🎶 ¡Ey! Soy tu asistente de producción musical de ProdIA Pro 😎\n\nCuéntame qué tienes en mente y te lo monto al momento — tengo control total sobre ACE-Step 🔥\n\nPrueba algo como:\n• "Hazme un reggaetón bien pegajoso a 95 bpm" 🎵\n• "Quiero una balada de rock en español que emocione" 🎸\n• "Sube la calidad al máximo" ✨\n• "¿Qué modelo me recomiendas para mi track?" 💡';
+        ? '音乐制作助手 — ProdIA Pro\n\n我可以完全控制ACE-Step。配置参数、生成音乐、调整制作的任何方面。\n\n示例：\n• "帮我做一首95 bpm的雷鬼"\n• "我想要一首感人的摇滚民谣"\n• "把质量调到最高"\n• "你推荐哪个模型？"'
+        : 'Asistente de producción musical — ProdIA Pro\n\nTengo control total sobre ACE-Step. Puedo configurar parámetros, generar música y ajustar cualquier aspecto de tu producción.\n\nEjemplos:\n• "Hazme un reggaetón a 95 bpm"\n• "Quiero una balada de rock en español"\n• "Sube la calidad al máximo"\n• "¿Qué modelo me recomiendas?"';
     setMessages([{
       id: 'welcome',
       role: 'system',
@@ -548,7 +557,7 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
 
     try {
       const allMessages = [...messages.filter(m => m.role !== 'system'), userMsg];
-      const { reply, params, actions } = await chatWithAssistant(allMessages, chatLang);
+      const { reply, params, actions } = await chatWithAssistant(allMessages, chatLang, agentMode);
 
       if (params) {
         setLastParams(params);
@@ -586,7 +595,7 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, messages, t]);
+  }, [input, isLoading, messages, t, chatLang, agentMode]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -834,6 +843,19 @@ export function ChatAssistant({ onApplyParams, onGenerateWithParams, onSetLyrics
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                {/* Agent / Instructor mode toggle */}
+                <button
+                  onClick={() => setAgentMode(prev => prev === 'agent' ? 'instructor' : 'agent')}
+                  className={`flex items-center gap-1 px-2 py-1 text-[9px] font-semibold rounded-lg border transition-colors ${
+                    agentMode === 'agent'
+                      ? 'bg-purple-600/20 text-purple-300 border-purple-500/30 hover:bg-purple-600/30'
+                      : 'bg-amber-600/20 text-amber-300 border-amber-500/30 hover:bg-amber-600/30'
+                  }`}
+                  title={agentMode === 'agent' ? t('chatAssistant.agentModeTooltip') : t('chatAssistant.instructorModeTooltip')}
+                >
+                  {agentMode === 'agent' ? <Zap size={10} /> : <Settings2 size={10} />}
+                  {agentMode === 'agent' ? t('chatAssistant.agentMode') : t('chatAssistant.instructorMode')}
+                </button>
                 {/* Language selector */}
                 <div className="flex items-center bg-zinc-800 rounded-lg border border-zinc-700/30 overflow-hidden">
                   {(['es', 'en', 'zh'] as const).map(lang => (

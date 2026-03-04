@@ -274,7 +274,11 @@
         "formatActionPurgeVram": "💾 Purge VRAM",
         "formatActionLoadLora": "🧬 Load LoRA: {{name}}",
         "formatActionUnloadLora": "🧬 Unload LoRA",
-        "removeSongContext": "Remove Song {{n}}"
+        "removeSongContext": "Remove Song {{n}}",
+        "agentMode": "Agent",
+        "instructorMode": "Instructor",
+        "agentModeTooltip": "Agent mode: AI applies changes directly",
+        "instructorModeTooltip": "Instructor mode: AI only explains, no auto-apply"
     },
     "chordEditor": {
         "panelTitle": "Chord Progression",

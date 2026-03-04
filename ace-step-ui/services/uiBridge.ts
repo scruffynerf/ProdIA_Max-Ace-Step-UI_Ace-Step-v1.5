@@ -358,15 +358,19 @@ function normalizeAction(raw: any): UIAction | null {
     'inferMethod', 'thinking', 'enhance', 'audioFormat', 'duration', 'batchSize',
     'bulkCount', 'randomSeed', 'seed', 'taskType', 'selectedModel', 'lmBackend',
     'lmModel', 'lmTemperature', 'lmCfgScale', 'lmTopK', 'lmTopP', 'lmNegativePrompt',
-    'referenceAudioUrl', 'sourceAudioUrl', 'audioCoverStrength', 'sourceStrength',
+    'referenceAudioUrl', 'referenceAudioTitle', 'sourceAudioUrl', 'sourceAudioTitle',
+    'audioCoverStrength', 'sourceStrength', 'audioCodes',
     'repaintingStart', 'repaintingEnd', 'instruction', 'editMode', 'editAction',
     'editTarget', 'editStart', 'editEnd', 'loraScale', 'loraEnabled', 'loraTriggerTag',
+    'loraPath', 'loraTagPosition', 'selectedLoraName', 'selectedLoraVariant',
     'variationMode', 'audioInfluence', 'styleInfluence', 'weirdness',
     'sectionMeasures', 'melodicVariation', 'apgNormThreshold', 'apgMomentum', 'apgEta',
     'noRepeatNgramSize', 'vocalRange', 'vocalStyle', 'noteSustain', 'customMode',
     'songDescription', 'useAdg', 'cfgIntervalStart', 'cfgIntervalEnd',
     'useCotMetas', 'useCotCaption', 'useCotLanguage', 'autogen', 'getScores', 'getLrc',
-    'separationQuality', 'loraPath',
+    'scoreScale', 'lmBatchChunkSize', 'alignToMeasures', 'isFormatCaption',
+    'trackName', 'completeTrackClasses',
+    'separationQuality', 'useVocalAsReference', 'useInstrumentalAsSource',
   ]);
 
   const paramKeys = Object.keys(raw).filter(k => KNOWN_PARAMS.has(k));
@@ -487,6 +491,57 @@ export function formatUIStateForLLM(state: UIState): string {
   // LLM status
   if (state.llmStatus) {
     lines.push(`🤖 Backend LLM: ${state.llmStatus.loaded ? 'Cargado' : 'No cargado'} — ${state.llmStatus.model} (${state.llmStatus.backend})`);
+  }
+
+  // Advanced toggles
+  const advancedToggles: string[] = [];
+  if (state.useAdg) advancedToggles.push('ADG');
+  if (state.useCotMetas) advancedToggles.push('CoT-Metas');
+  if (state.useCotCaption) advancedToggles.push('CoT-Caption');
+  if (state.useCotLanguage) advancedToggles.push('CoT-Language');
+  if (state.autogen) advancedToggles.push('Autogen');
+  if (state.isFormatCaption) advancedToggles.push('Format-Caption');
+  if (state.getScores) advancedToggles.push('Get-Scores');
+  if (state.getLrc) advancedToggles.push('Get-LRC');
+  if (state.alignToMeasures) advancedToggles.push('Align-Measures');
+  if (advancedToggles.length > 0) {
+    lines.push('');
+    lines.push(`🔧 Toggles activos: ${advancedToggles.join(', ')}`);
+  }
+
+  // CFG interval
+  if (state.cfgIntervalStart !== undefined || state.cfgIntervalEnd !== undefined) {
+    lines.push(`📊 CFG Interval: ${state.cfgIntervalStart ?? 0} → ${state.cfgIntervalEnd ?? 1}`);
+  }
+
+  // LM negative prompt
+  if (state.lmNegativePrompt) {
+    lines.push(`🚫 Negative prompt: "${state.lmNegativePrompt}"`);
+  }
+
+  // Score/LM batch
+  if (state.scoreScale) lines.push(`📏 Score Scale: ${state.scoreScale}`);
+  if (state.lmBatchChunkSize) lines.push(`📦 LM Batch Chunk: ${state.lmBatchChunkSize}`);
+
+  // Track/pistas
+  if (state.trackName) lines.push(`🎼 Track Name: ${state.trackName}`);
+  if (state.completeTrackClasses) lines.push(`🎹 Track Classes: ${state.completeTrackClasses}`);
+
+  // Repaint
+  if (state.repaintingStart > 0 || state.repaintingEnd < 1) {
+    lines.push(`🎨 Repaint: ${state.repaintingStart} → ${state.repaintingEnd}`);
+  }
+  if (state.instruction) lines.push(`💬 Instruction: "${state.instruction}"`);
+
+  // Melodic/APG (only show if non-default)
+  if (state.sectionMeasures) lines.push(`🎵 Section Measures: ${state.sectionMeasures}`);
+  if (state.melodicVariation) lines.push(`🎶 Melodic Variation: ${state.melodicVariation}`);
+  if (state.noRepeatNgramSize) lines.push(`🔁 No-Repeat N-gram: ${state.noRepeatNgramSize}`);
+
+  // Audio codes
+  if (state.audioCodes) {
+    const codeCount = (state.audioCodes.match(/<\|audio_code_\d+\|>/g) || []).length;
+    lines.push(`🧬 Audio Codes: ${codeCount} tokens semánticos cargados`);
   }
 
   // Vocal separation
